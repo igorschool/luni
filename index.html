@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Задание 1: Помоги Луни</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
@@ -12,12 +12,13 @@
             background: linear-gradient(180deg, #e0f2fe 0%, #f0f9ff 100%);
             touch-action: none;
             overflow: hidden;
+            -webkit-user-select: none;
         }
         .drag-item {
             cursor: grab;
-            transition: transform 0.2s, box-shadow 0.2s;
             user-select: none;
             touch-action: none;
+            z-index: 10;
         }
         .drop-zone {
             transition: all 0.3s;
@@ -25,8 +26,8 @@
         }
         .drop-zone.active {
             border-color: #3b82f6;
-            background-color: rgba(59, 130, 246, 0.1);
-            transform: scale(1.02);
+            background-color: rgba(59, 130, 246, 0.2);
+            transform: scale(1.05);
         }
         .luni-bubble {
             position: relative;
@@ -62,7 +63,6 @@
 </head>
 <body class="h-screen flex flex-col p-4">
 
-    <!-- Стартовый экран -->
     <div id="start-screen" class="overlay">
         <div class="mb-6 w-40 h-40">
             <img src="2.png" alt="Аватар Луни" class="luni-avatar" onerror="this.src='https://via.placeholder.com/150?text=Luni'">
@@ -74,7 +74,6 @@
         </div>
     </div>
 
-    <!-- Основной интерфейс игры -->
     <div class="max-w-4xl mx-auto w-full flex items-start justify-between mb-4">
         <div class="flex-1 mr-4">
             <h1 class="text-2xl font-black text-blue-600 mb-1">Задание №1</h1>
@@ -88,10 +87,8 @@
         </div>
     </div>
 
-    <!-- Контейнер для предметов -->
     <div id="items-container" class="max-w-4xl mx-auto w-full bg-white/80 backdrop-blur rounded-3xl p-4 shadow-inner grid grid-cols-2 md:grid-cols-4 gap-3 mb-6 min-h-[200px]"></div>
 
-    <!-- Зоны сброса -->
     <div class="max-w-4xl mx-auto w-full grid grid-cols-2 gap-4 flex-1 mb-4">
         <div id="basket" class="drop-zone flex flex-col items-center justify-center p-4 rounded-3xl bg-blue-50 border-2 border-blue-100 h-full relative" data-type="food">
             <span class="text-xs font-black text-blue-400 uppercase mb-1">Съедобное</span>
@@ -105,7 +102,6 @@
         </div>
     </div>
 
-    <!-- Окно успеха -->
     <div id="success-modal" class="fixed inset-0 bg-black/40 hidden flex items-center justify-center z-50 p-6">
         <div class="bg-white rounded-3xl p-8 max-w-xs w-full text-center shadow-2xl">
             <div class="text-6xl mb-4">✨</div>
@@ -116,9 +112,7 @@
     </div>
 
     <script>
-        // Имена файлов в локальной папке
         const AUDIO_FILE_NAME = '1.mp3';
-        
         let gameAudio = null;
         let useSound = false;
         let score = 0;
@@ -137,14 +131,9 @@
         function initApp(sound) {
             useSound = sound;
             document.getElementById('start-screen').classList.add('hidden');
-            
             if (sound) {
                 gameAudio = new Audio(AUDIO_FILE_NAME);
-                gameAudio.onerror = () => {
-                    console.error("Аудиофайл 1.mp3 не найден в папке.");
-                };
             }
-            
             renderItems();
             if (useSound) playAudio();
         }
@@ -152,7 +141,7 @@
         function playAudio() {
             if (gameAudio) {
                 gameAudio.currentTime = 0;
-                gameAudio.play().catch(err => console.log("Воспроизведение заблокировано браузером."));
+                gameAudio.play().catch(err => console.log("Audio blocked"));
             }
         }
 
@@ -162,54 +151,84 @@
             itemsData.forEach(item => {
                 const el = document.createElement('div');
                 el.className = 'drag-item bg-white rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center justify-center p-2 h-24 md:h-28';
-                el.draggable = true;
                 el.dataset.name = item.name;
                 el.dataset.type = item.type;
-                el.innerHTML = `<div class="text-4xl md:text-5xl mb-1">${item.icon}</div><div class="text-[10px] font-black text-slate-400 uppercase">${item.name}</div>`;
+                el.innerHTML = `<div class="text-4xl md:text-5xl mb-1 pointer-events-none">${item.icon}</div><div class="text-[10px] font-black text-slate-400 uppercase pointer-events-none">${item.name}</div>`;
                 
-                el.ontouchstart = handleTouchStart;
-                el.ontouchmove = handleTouchMove;
-                el.ontouchend = handleTouchEnd;
+                // Touch события
+                el.addEventListener('touchstart', handleTouchStart, {passive: false});
+                el.addEventListener('touchmove', handleTouchMove, {passive: false});
+                el.addEventListener('touchend', handleTouchEnd);
                 
-                el.ondragstart = (e) => {
-                    e.dataTransfer.setData('text', item.name);
-                    el.classList.add('opacity-40');
-                };
-                el.ondragend = () => el.classList.remove('opacity-40');
+                // Мышь (для ПК)
+                el.setAttribute('draggable', 'true');
+                el.ondragstart = (e) => e.dataTransfer.setData('text', item.name);
+                
                 container.appendChild(el);
             });
         }
 
         let curDrag = null;
+        let startRect = null;
+        let shiftX, shiftY;
+
         function handleTouchStart(e) {
             curDrag = e.currentTarget;
+            const touch = e.touches[0];
+            const rect = curDrag.getBoundingClientRect();
+            
+            // Сохраняем сдвиг пальца относительно угла элемента
+            shiftX = touch.clientX - rect.left;
+            shiftY = touch.clientY - rect.top;
+            
+            // Фиксируем размеры перед тем как сделать fixed
+            curDrag.style.width = rect.width + 'px';
+            curDrag.style.height = rect.height + 'px';
             curDrag.style.position = 'fixed';
             curDrag.style.zIndex = '1000';
-            curDrag.style.width = '100px';
-            moveAt(e.touches[0].clientX, e.touches[0].clientY);
+            
+            moveAt(touch.clientX, touch.clientY);
         }
+
         function handleTouchMove(e) {
-            if (curDrag) {
-                e.preventDefault();
-                moveAt(e.touches[0].clientX, e.touches[0].clientY);
-            }
+            if (!curDrag) return;
+            e.preventDefault();
+            const touch = e.touches[0];
+            moveAt(touch.clientX, touch.clientY);
+
+            // Визуальный отклик зон
+            const zone = getOverZone(touch.clientX, touch.clientY);
+            document.querySelectorAll('.drop-zone').forEach(z => z.classList.remove('active'));
+            if (zone) zone.classList.add('active');
         }
+
         function handleTouchEnd(e) {
             if (!curDrag) return;
-            const t = e.changedTouches[0];
-            const zone = document.elementFromPoint(t.clientX, t.clientY)?.closest('.drop-zone');
-            
+            const touch = e.changedTouches[0];
+            const zone = getOverZone(touch.clientX, touch.clientY);
+
+            document.querySelectorAll('.drop-zone').forEach(z => z.classList.remove('active'));
+
             if (zone && zone.dataset.type === curDrag.dataset.type) {
                 dropIn(curDrag, zone);
             } else {
+                // Возвращаем в сетку
                 curDrag.style.position = 'static';
                 curDrag.style.width = 'auto';
+                curDrag.style.height = 'auto';
+                curDrag.style.zIndex = '10';
             }
             curDrag = null;
         }
+
         function moveAt(x, y) {
-            curDrag.style.left = (x - 50) + 'px';
-            curDrag.style.top = (y - 50) + 'px';
+            curDrag.style.left = (x - shiftX) + 'px';
+            curDrag.style.top = (y - shiftY) + 'px';
+        }
+
+        function getOverZone(x, y) {
+            const elements = document.elementsFromPoint(x, y);
+            return elements.find(el => el.classList.contains('drop-zone'));
         }
 
         function dropIn(el, zone) {
@@ -225,6 +244,7 @@
             }
         }
 
+        // Поддержка Drag & Drop для мыши (ПК)
         document.querySelectorAll('.drop-zone').forEach(z => {
             z.ondragover = (e) => { e.preventDefault(); z.classList.add('active'); };
             z.ondragleave = () => z.classList.remove('active');
