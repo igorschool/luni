@@ -6,7 +6,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#fef3c7">
-    <title>Задание 3: Покорми друзей</title>
+    <title>Задание 1: Помоги Луни</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -18,30 +18,17 @@
             --safe-bottom: env(safe-area-inset-bottom, 0px);
             --safe-left: env(safe-area-inset-left, 0px);
             --safe-right: env(safe-area-inset-right, 0px);
-            --unit-vw: 1vw;
-            --unit-vh: 1vh;
-            --cookie-size: 56px;
+            --item-size: clamp(56px, 12vw, 88px);
+            --zone-height: clamp(110px, 22vh, 180px);
+            --header-gap: clamp(8px, 1.2vh, 16px);
         }
 
-        @supports not (height: 100dvh) {
-            :root { --unit-vh: 1vh; }
-        }
-
-        html {
-            -webkit-text-size-adjust: 100%;
-            text-size-adjust: 100%;
-        }
-
-        html, body {
-            width: 100%;
-            height: 100%;
-            overscroll-behavior: none;
-            touch-action: none;
-        }
+        html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+        html, body { width: 100%; height: 100%; overscroll-behavior: none; }
 
         body {
             font-family: 'Nunito', system-ui, -apple-system, sans-serif;
-            background: #fef3c7;
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
             color: #1e293b;
             overflow: hidden;
             -webkit-tap-highlight-color: transparent;
@@ -55,245 +42,259 @@
                      calc(var(--safe-bottom) + 0.5rem) calc(var(--safe-right) + 0.5rem);
         }
 
-        /* === Адаптивные брейкпоинты === */
+        /* === Брейкпоинты для компактных экранов === */
         @media (orientation: landscape) and (max-height: 500px) {
-            :root { --cookie-size: 48px; }
-            body { padding: 4px 8px; font-size: 14px; }
+            :root { --item-size: clamp(48px, 10vw, 72px); --zone-height: clamp(90px, 18vh, 140px); }
+            .header-sub { display: none !important; }
         }
         @media (orientation: landscape) and (max-height: 400px) {
-            :root { --cookie-size: 42px; }
-            .header-sub, .click-hint { display: none !important; }
+            :root { --item-size: clamp(42px, 9vw, 64px); --zone-height: clamp(80px, 16vh, 120px); }
+            .sound-toggle span { display: none; }
         }
         @media (max-width: 360px) {
-            :root { --cookie-size: 44px; }
+            :root { --item-size: clamp(48px, 13vw, 76px); }
         }
 
-        /* === Интерактивные элементы === */
-        .cookie {
-            background: linear-gradient(145deg, #d97706, #b45309);
-            border: 3px solid #fde68a;
-            border-radius: 50%;
+        /* === Header === */
+        .game-header {
             display: flex;
             align-items: center;
-            justify-content: center;
-            color: #fef3c7;
-            cursor: pointer;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-            position: absolute;
-            z-index: 1000;
-            will-change: transform, left, top;
-            transition: transform 0.1s ease;
-            touch-action: manipulation;
+            justify-content: space-between;
+            gap: var(--header-gap);
+            margin-bottom: clamp(8px, 1.4vh, 14px);
+            flex-wrap: wrap;
         }
-        .cookie:active { transform: scale(0.92) rotate(2deg); }
-        .cookie i { pointer-events: none; }
-
-        .bowl-hit-zone {
-            position: relative;
-            display: flex;
-            align-items: flex-end;
-            justify-content: center;
-            cursor: pointer;
-            border-radius: 20px;
-            width: clamp(120px, 24vw, 260px);
-            height: clamp(65px, 12vw, 130px);
-            transition: transform 0.15s ease;
-            touch-action: manipulation;
-        }
-        .bowl-hit-zone:active { transform: scale(0.97); }
-
-        .bowl-svg {
-            width: 100%;
-            height: 100%;
-            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.12));
-            pointer-events: none;
-        }
-
-        .animal-icon {
-            line-height: 1;
-            margin-bottom: -4px;
-            transition: transform 0.2s ease;
-            font-size: clamp(42px, 8.5vw, 96px);
-            will-change: transform;
-        }
-        .animal-container:active .animal-icon { transform: scale(1.05); }
-
-        .animal-name {
-            margin-top: clamp(4px, 1vw, 12px);
+        .header-title {
+            font-size: clamp(16px, 3.2vw, 28px);
             font-weight: 900;
-            font-size: clamp(12px, 2.3vw, 24px);
             text-transform: uppercase;
-            letter-spacing: -0.02em;
-            text-align: center;
-            max-width: 100%;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            color: #92400e;
+            line-height: 1.1;
         }
-
-        .counter {
-            position: absolute;
-            right: clamp(4px, 0.8vw, 10px);
-            top: 50%;
-            transform: translateY(-50%);
-            background: #ef4444;
-            color: white;
-            width: clamp(22px, 3.6vw, 38px);
-            height: clamp(22px, 3.6vw, 38px);
-            border-radius: 50%;
+        .header-sub {
+            font-size: clamp(11px, 2vw, 17px);
+            font-weight: 700;
+            color: #78350f;
+            opacity: 0.85;
+            line-height: 1.25;
+        }
+        .sound-toggle {
             display: flex;
             align-items: center;
-            justify-content: center;
-            font-weight: 900;
-            font-size: clamp(10px, 1.7vw, 16px);
-            border: 3px solid white;
-            box-shadow: 0 3px 6px rgba(0,0,0,0.15);
-            z-index: 50;
-            transition: transform 0.2s ease;
-        }
-        .counter:active { transform: translateY(-50%) scale(1.1); }
-
-        /* === Коробка с печеньками === */
-        #cookie-box {
+            gap: clamp(6px, 1vw, 10px);
+            background: rgba(255,255,255,0.7);
+            padding: clamp(6px, 1vw, 10px) clamp(10px, 1.8vw, 16px);
+            border-radius: 24px;
+            border: 2px solid #fde68a;
+            font-weight: 700;
+            font-size: clamp(11px, 1.8vw, 15px);
             cursor: pointer;
-            transition: transform 0.12s ease;
+            touch-action: manipulation;
+            transition: transform 0.12s ease, background 0.15s ease;
+        }
+        .sound-toggle:active { transform: scale(0.96); background: rgba(255,255,255,0.9); }
+        .sound-toggle i { font-size: clamp(14px, 2.4vw, 20px); }
+
+        /* === Инструкция === */
+        .instruction {
+            text-align: center;
+            padding: clamp(8px, 1.4vh, 14px) clamp(12px, 2vw, 20px);
+            background: rgba(255,255,255,0.75);
+            border-radius: 16px;
+            border: 2px solid #fcd34d;
+            margin-bottom: clamp(8px, 1.2vh, 12px);
+            font-weight: 700;
+            font-size: clamp(12px, 2.2vw, 17px);
+            line-height: 1.35;
+            color: #78350f;
+        }
+        .instruction strong { color: #92400e; }
+
+        /* === Зоны сортировки === */
+        .zones-container {
+            display: flex;
+            justify-content: space-around;
+            align-items: flex-end;
+            gap: clamp(10px, 2.4vw, 24px);
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            flex: 1;
+            min-height: 0;
+        }
+
+        .drop-zone {
+            flex: 1;
+            max-width: 220px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            will-change: transform;
-            touch-action: manipulation;
-            padding: 4px;
-        }
-        #cookie-box:active { transform: scale(0.94); }
-
-        .box-body {
-            width: clamp(85px, 15vw, 150px);
-            height: clamp(60px, 11vw, 120px);
-            background: linear-gradient(180deg, #b45309, #92400e);
-            border-radius: 0 0 14px 14px;
             position: relative;
+            touch-action: manipulation;
+        }
+
+        .zone-card {
+            width: 100%;
+            height: var(--zone-height);
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding-top: clamp(8px, 1.5vh, 14px);
+            cursor: pointer;
+            transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+            border: 4px dashed;
+            position: relative;
+            overflow: hidden;
+        }
+        .zone-card:active { transform: scale(0.98); }
+        .zone-card.edible {
+            background: linear-gradient(145deg, #dcfce7, #bbf7d0);
+            border-color: #22c55e;
+            box-shadow: 0 6px 20px rgba(34,197,94,0.15);
+        }
+        .zone-card.inedible {
+            background: linear-gradient(145deg, #fee2e2, #fecaca);
+            border-color: #ef4444;
+            box-shadow: 0 6px 20px rgba(239,68,68,0.15);
+        }
+        .zone-card.drag-over {
+            border-style: solid;
+            transform: scale(1.02);
+            box-shadow: 0 8px 28px rgba(0,0,0,0.2);
+        }
+
+        .zone-icon {
+            font-size: clamp(32px, 6vw, 52px);
+            margin-bottom: clamp(4px, 0.8vh, 8px);
+        }
+        .zone-title {
+            font-weight: 900;
+            font-size: clamp(13px, 2.3vw, 19px);
+            text-transform: uppercase;
+            letter-spacing: -0.01em;
+            text-align: center;
+            padding: 0 8px;
+        }
+        .zone-count {
+            position: absolute;
+            top: clamp(6px, 1vh, 10px);
+            right: clamp(6px, 1vw, 12px);
+            background: #1e293b;
+            color: white;
+            width: clamp(24px, 4vw, 36px);
+            height: clamp(24px, 4vw, 36px);
+            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            border-top: 4px solid #78350f;
-        }
-        .box-lid {
-            width: calc(clamp(85px, 15vw, 150px) + 12px);
-            height: clamp(18px, 3.2vw, 30px);
-            background: linear-gradient(180deg, #92400e, #78350f);
-            border-radius: 8px;
-            position: absolute;
-            top: calc(-1 * clamp(10px, 1.8vw, 16px));
-            left: 50%;
-            transform: translateX(-50%);
-        }
-        .box-icon {
-            font-size: clamp(24px, 4.2vw, 46px);
-            color: #fde68a;
-            opacity: 0.6;
-        }
-
-        .click-hint {
-            animation: bounce 1.8s infinite;
             font-weight: 900;
-            color: #92400e;
-            font-size: clamp(10px, 1.5vw, 13px);
-            text-transform: uppercase;
-            margin-bottom: clamp(3px, 0.5vw, 7px);
-            text-align: center;
-            padding: 0 6px;
-            line-height: 1.2;
-        }
-        @keyframes bounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-6px); }
+            font-size: clamp(11px, 1.8vw, 15px);
+            border: 2px solid white;
         }
 
-        /* === Кнопка "Готово" === */
-        #btn-done {
+        .items-area {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: clamp(6px, 1.2vw, 12px);
+            padding: clamp(4px, 0.8vh, 8px);
+            min-height: 0;
+        }
+
+        /* === Предметы === */
+        .draggable-item {
+            width: var(--item-size);
+            height: var(--item-size);
+            border-radius: 16px;
+            background: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: clamp(2px, 0.4vh, 4px);
+            box-shadow: 0 4px 14px rgba(0,0,0,0.12);
+            border: 3px solid #fde68a;
+            cursor: grab;
+            transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.2s ease;
+            touch-action: none;
+            will-change: transform, left, top;
+            position: relative;
+            user-select: none;
+        }
+        .draggable-item:active { cursor: grabbing; transform: scale(1.06) rotate(2deg); z-index: 100; }
+        .draggable-item.sorted { opacity: 0.6; cursor: default; transform: scale(0.94); }
+        .draggable-item.correct { border-color: #22c55e; box-shadow: 0 0 0 3px rgba(34,197,94,0.3); }
+        .draggable-item.wrong { border-color: #ef4444; box-shadow: 0 0 0 3px rgba(239,68,68,0.3); animation: shake 0.4s ease; }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0) scale(1.06); }
+            25% { transform: translateX(-6px) scale(1.06); }
+            75% { transform: translateX(6px) scale(1.06); }
+        }
+
+        .item-icon {
+            font-size: clamp(24px, 5vw, 38px);
+            line-height: 1;
+        }
+        .item-label {
+            font-weight: 700;
+            font-size: clamp(9px, 1.6vw, 13px);
+            text-align: center;
+            padding: 0 4px;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* === Кнопка проверки === */
+        .check-btn {
+            background: linear-gradient(145deg, #3b82f6, #2563eb);
+            color: white;
             font-weight: 900;
             text-transform: uppercase;
             border-radius: 14px;
             font-size: clamp(14px, 2.1vw, 20px);
-            padding: clamp(10px, 1.4vw, 14px) clamp(24px, 3.8vw, 44px);
-            width: 100%;
-            max-width: 260px;
-            transition: all 0.18s ease;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            padding: clamp(10px, 1.4vh, 14px) clamp(24px, 3.8vw, 44px);
             border: none;
             cursor: pointer;
             touch-action: manipulation;
-            will-change: background, opacity;
-        }
-        #btn-done:active { transform: scale(0.98); }
-        #btn-done:disabled { opacity: 0.4; pointer-events: none; }
-
-        /* === Заголовок === */
-        .header-title { font-size: clamp(16px, 3vw, 28px); line-height: 1.1; }
-        .header-sub   { font-size: clamp(11px, 1.9vw, 18px); line-height: 1.2; }
-        .header-icon  { font-size: clamp(20px, 3.8vw, 40px); }
-
-        /* === Расположение животных === */
-        .animals-row {
-            display: flex;
-            justify-content: space-around;
-            align-items: flex-end;
-            gap: clamp(12px, 2.8vw, 24px);
+            transition: all 0.18s ease;
+            box-shadow: 0 4px 14px rgba(37,99,235,0.3);
+            margin: clamp(8px, 1.2vh, 14px) 0;
             width: 100%;
-            max-width: 850px;
-            flex-wrap: wrap;
+            max-width: 260px;
         }
-
-        /* === Нижняя панель === */
-        .bottom-area {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: clamp(8px, 1.4vh, 16px);
-            margin-bottom: clamp(8px, 2vh, 18px);
-            width: 100%;
-        }
-
-        /* === Ландшафтный режим: компактная раскладка === */
-        @media (orientation: landscape) and (max-height: 480px) {
-            .animals-row { gap: 6px; }
-            .animal-icon { font-size: clamp(38px, 6.5vw, 72px); }
-            .animal-name { font-size: clamp(11px, 1.8vw, 16px); margin-top: 2px; }
-            .bowl-hit-zone { width: clamp(100px, 20vw, 200px); height: clamp(55px, 9vw, 95px); }
-            
-            .bottom-area {
-                flex-direction: row;
-                justify-content: center;
-                gap: 10px;
-                margin-bottom: 6px;
-            }
-            #cookie-box { transform: scale(0.82); transform-origin: center bottom; }
-            #btn-done { max-width: 170px; padding: 8px 20px; font-size: 14px; }
-        }
-
-        @media (orientation: landscape) and (max-height: 380px) {
-            #cookie-box { transform: scale(0.72); }
-            #btn-done { font-size: 13px; padding: 7px 18px; }
-            .header-sub { display: none !important; }
+        .check-btn:active { transform: scale(0.98); }
+        .check-btn:disabled { 
+            background: #94a3b8; 
+            opacity: 0.45; 
+            pointer-events: none; 
+            box-shadow: none;
         }
 
         /* === Экран победы === */
-        #win-ui {
+        #win-modal {
             display: none;
             position: fixed;
             inset: 0;
-            background: rgba(120,53,15,0.96);
+            background: rgba(120,53,15,0.94);
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            z-index: 5000;
+            z-index: 6000;
             padding: max(16px, var(--safe-top)) max(16px, var(--safe-right)) 
                      max(16px, var(--safe-bottom)) max(16px, var(--safe-left));
             text-align: center;
-            animation: fadeIn 0.28s ease-out;
+            animation: fadeIn 0.25s ease-out;
         }
-        @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: scale(1); } }
 
-        #win-ui .win-card {
+        .win-card {
             background: white;
             padding: clamp(24px, 4vw, 36px) clamp(20px, 3vw, 28px);
             border-radius: 26px;
@@ -302,23 +303,22 @@
             width: 100%;
             box-shadow: 0 24px 48px rgba(0,0,0,0.35);
         }
-        #win-ui .win-emoji { font-size: clamp(72px, 14vw, 110px); margin-bottom: 10px; line-height: 1; }
-        #win-ui h2 { 
-            font-size: clamp(20px, 4.8vw, 34px); 
+        .win-emoji { font-size: clamp(64px, 13vw, 96px); margin-bottom: 10px; line-height: 1; }
+        .win-title { 
+            font-size: clamp(20px, 4.8vw, 32px); 
             font-weight: 900; 
             color: #1e293b; 
             text-transform: uppercase; 
             margin: 0 0 8px;
-            letter-spacing: -0.02em;
         }
-        #win-ui p { 
+        .win-message { 
             font-size: clamp(13px, 2.4vw, 18px); 
             font-weight: 700; 
             color: #475569; 
-            margin: 0 0 18px;
+            margin: 0 0 20px;
             line-height: 1.35;
         }
-        #win-ui button {
+        .win-btn {
             background: linear-gradient(145deg, #22c55e, #16a34a);
             color: white;
             font-weight: 900;
@@ -329,346 +329,467 @@
             width: 100%;
             border: none;
             cursor: pointer;
-            transition: transform 0.1s ease, filter 0.15s ease;
+            transition: transform 0.1s ease;
             touch-action: manipulation;
         }
-        #win-ui button:active { transform: scale(0.97); filter: brightness(0.95); }
+        .win-btn:active { transform: scale(0.97); }
 
-        /* === Утилиты для отладки (можно удалить в продакшене) === */
-        /* .debug { outline: 1px dashed rgba(255,0,0,0.3); } */
+        /* === Ландшафтная компактная раскладка === */
+        @media (orientation: landscape) and (max-height: 480px) {
+            .zones-container { flex-direction: row; align-items: center; gap: 8px; }
+            .zone-card { height: var(--zone-height); }
+            .items-area { order: 3; width: 100%; justify-content: center; margin-top: 8px; }
+            .check-btn { max-width: 180px; padding: 8px 20px; font-size: 14px; margin: 6px 0; }
+        }
+        @media (orientation: landscape) and (max-height: 380px) {
+            .zone-title { font-size: clamp(11px, 2vw, 15px); }
+            .item-label { display: none; }
+            .draggable-item { width: clamp(42px, 9vw, 60px); height: clamp(42px, 9vw, 60px); }
+        }
+
+        /* === Утилиты === */
+        .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
     <!-- Header -->
-    <header style="display:flex; align-items:center; justify-content:space-between; margin-bottom: clamp(8px, 1.1vh, 14px);">
+    <header class="game-header">
         <div>
-            <h1 class="header-title font-black text-amber-900 uppercase">Задание №3</h1>
-            <p class="header-sub font-bold" style="color:#92400e; opacity:0.85;">Нажимай на печеньки или миски!</p>
+            <h1 class="header-title">Задание №1</h1>
+            <p class="header-sub">Готов помочь Луни?</p>
         </div>
-        <div style="background:rgba(255,255,255,0.6); padding:clamp(6px,1vw,10px); border-radius:50%; border:2px solid #fde68a;">
-            <i class="fa-solid fa-face-smile header-icon text-amber-600"></i>
-        </div>
+        <button class="sound-toggle" id="soundToggle" aria-pressed="true" aria-label="Переключить звук">
+            <i class="fa-solid fa-volume-high" id="soundIcon"></i>
+            <span>Со звуком</span>
+        </button>
     </header>
 
-    <!-- Game Area -->
-    <main id="game-area" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:space-between; min-height:0; width:100%;">
+    <!-- Instruction -->
+    <div class="instruction">
+        <strong>Распредели покупки!</strong><br>
+        🍎 Съедобное — в корзину &nbsp;|&nbsp; 📦 Несъедобное — в коробку
+    </div>
 
-        <!-- Animals Row -->
-        <div class="animals-row" id="animals-row">
-
-            <!-- Cat -->
-            <div class="animal-container" style="display:flex; flex-direction:column; align-items:center; position:relative;" 
-                 onclick="handleAnimalClick('cat')" role="button" tabindex="0" aria-label="Миска котика Снежка">
-                <div id="icon-cat" class="animal-icon" style="color:#a855f7;" aria-hidden="true">
-                    <i class="fa-solid fa-cat"></i>
+    <!-- Main Game Area -->
+    <main style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:space-between; min-height:0; width:100%;">
+        
+        <!-- Drop Zones -->
+        <div class="zones-container">
+            
+            <!-- Edible Zone -->
+            <div class="drop-zone">
+                <div class="zone-card edible" id="zone-edible" data-type="edible" role="button" tabindex="0" aria-label="Зона для съедобных предметов">
+                    <div class="zone-count" id="count-edible" aria-live="polite">0</div>
+                    <div class="zone-icon">🧺</div>
+                    <div class="zone-title">Съедобное</div>
                 </div>
-                <div id="zone-cat" class="bowl-hit-zone" data-target="cat" aria-label="Миска Снежка">
-                    <div id="count-cat" class="counter" aria-live="polite">0</div>
-                    <svg class="bowl-svg" viewBox="0 0 200 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                        <path d="M10 20C10 20 20 80 100 80C180 80 190 20 190 20H10Z" fill="#67E8F9"/>
-                        <ellipse cx="100" cy="20" rx="90" ry="15" fill="#22D3EE"/>
-                    </svg>
-                </div>
-                <span class="animal-name" style="color:#581c87;">Снежок</span>
             </div>
 
-            <!-- Dog -->
-            <div class="animal-container" style="display:flex; flex-direction:column; align-items:center; position:relative;" 
-                 onclick="handleAnimalClick('dog')" role="button" tabindex="0" aria-label="Миска собачки Барона">
-                <div id="icon-dog" class="animal-icon" style="color:#f97316;" aria-hidden="true">
-                    <i class="fa-solid fa-dog"></i>
+            <!-- Items Area (center) -->
+            <div class="items-area" id="items-area" aria-label="Предметы для сортировки"></div>
+
+            <!-- Inedible Zone -->
+            <div class="drop-zone">
+                <div class="zone-card inedible" id="zone-inedible" data-type="inedible" role="button" tabindex="0" aria-label="Зона для несъедобных предметов">
+                    <div class="zone-count" id="count-inedible" aria-live="polite">0</div>
+                    <div class="zone-icon">📦</div>
+                    <div class="zone-title">Несъедобное</div>
                 </div>
-                <div id="zone-dog" class="bowl-hit-zone" data-target="dog" aria-label="Миска Барона">
-                    <div id="count-dog" class="counter" aria-live="polite">0</div>
-                    <svg class="bowl-svg" viewBox="0 0 200 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                        <path d="M10 20C10 20 20 80 100 80C180 80 190 20 190 20H10Z" fill="#FDE047"/>
-                        <ellipse cx="100" cy="20" rx="90" ry="15" fill="#FACC15"/>
-                    </svg>
-                </div>
-                <span class="animal-name" style="color:#7c2d12;">Барон</span>
             </div>
         </div>
 
-        <!-- Bottom Controls -->
-        <div class="bottom-area">
-            <div id="cookie-box" onclick="spawnCookie()" role="button" tabindex="0" aria-label="Коробка с печеньками, нажми чтобы взять">
-                <div class="click-hint">Нажми сюда! 👆</div>
-                <div class="box-body">
-                    <div class="box-lid"></div>
-                    <i class="fa-solid fa-cookie-bite box-icon" aria-hidden="true"></i>
-                </div>
-            </div>
-
-            <button id="btn-done" onclick="checkFinal()" disabled aria-live="polite">
-                Готово!
-            </button>
-        </div>
+        <!-- Check Button -->
+        <button class="check-btn" id="checkBtn" disabled>Проверить</button>
     </main>
 
     <!-- Win Modal -->
-    <div id="win-ui" role="dialog" aria-modal="true" aria-labelledby="win-title">
+    <div id="win-modal" role="dialog" aria-modal="true" aria-labelledby="winTitle">
         <div class="win-card">
-            <div class="win-emoji" aria-hidden="true">🍪✨</div>
-            <h2 id="win-title">Ура!</h2>
-            <p>Ты разделил всё поровну. Друзья довольны!</p>
-            <button onclick="restartGame()" aria-label="Начать заново">Играть ещё</button>
+            <div class="win-emoji">✨🎉</div>
+            <h2 class="win-title" id="winTitle">Молодец!</h2>
+            <p class="win-message">Ты отличный помощник!</p>
+            <button class="win-btn" onclick="restartGame()">Играть ещё раз</button>
         </div>
     </div>
 
     <script>
         // === Конфигурация ===
         const CONFIG = {
-            limit: 10,
-            targetPerAnimal: 5,
-            cookieMinSize: 40,
-            cookieMaxSize: 72,
-            cookieScalePortrait: 0.07,
-            cookieScaleLandscape: 0.085,
-            resizeDebounce: 120,
-            orientationDebounce: 250
+            totalItems: 8,
+            correctThreshold: 8, // все должны быть правильно
+            dragSensitivity: 8, // px для начала drag
+            snapThreshold: 60, // px для авто-притяжения к зоне
+            animDuration: 400 // ms
         };
+
+        // === Данные предметов ===
+        const ITEMS = [
+            { id: 'apple', label: 'Яблоко', icon: '🍎', type: 'edible' },
+            { id: 'bread', label: 'Хлеб', icon: '🍞', type: 'edible' },
+            { id: 'milk', label: 'Молоко', icon: '🥛', type: 'edible' },
+            { id: 'carrot', label: 'Морковь', icon: '🥕', type: 'edible' },
+            { id: 'soap', label: 'Мыло', icon: '🧼', type: 'inedible' },
+            { id: 'brush', label: 'Щётка', icon: '🪥', type: 'inedible' },
+            { id: 'book', label: 'Книга', icon: '📚', type: 'inedible' },
+            { id: 'ball', label: 'Мяч', icon: '⚽', type: 'inedible' }
+        ];
 
         // === Состояние игры ===
         const state = {
-            counts: { cat: 0, dog: 0 },
-            total: 0,
-            cookies: [],
-            isUpdating: false,
-            isComplete: false
+            sound: true,
+            items: [],
+            sorted: { edible: 0, inedible: 0 },
+            isDragging: false,
+            isComplete: false,
+            dragData: null
         };
 
-        // === DOM элементы ===
+        // === DOM ===
         const els = {};
         const initDOM = () => {
-            els.cookieBox = document.getElementById('cookie-box');
-            els.btnDone = document.getElementById('btn-done');
-            els.winUI = document.getElementById('win-ui');
-            els.counts = {
-                cat: document.getElementById('count-cat'),
-                dog: document.getElementById('count-dog')
-            };
+            els.itemsArea = document.getElementById('items-area');
             els.zones = {
-                cat: document.getElementById('zone-cat'),
-                dog: document.getElementById('zone-dog')
+                edible: document.getElementById('zone-edible'),
+                inedible: document.getElementById('zone-inedible')
             };
+            els.counts = {
+                edible: document.getElementById('count-edible'),
+                inedible: document.getElementById('count-inedible')
+            };
+            els.checkBtn = document.getElementById('checkBtn');
+            els.winModal = document.getElementById('win-modal');
+            els.soundToggle = document.getElementById('soundToggle');
+            els.soundIcon = document.getElementById('soundIcon');
         };
 
         // === Утилиты ===
         const isLandscape = () => window.matchMedia('(orientation: landscape)').matches;
+        const shuffle = (arr) => [...arr].sort(() => Math.random() - 0.5);
         
-        const getCookieSize = () => {
-            const shortSide = Math.min(window.innerWidth, window.innerHeight);
-            const scale = isLandscape() ? CONFIG.cookieScaleLandscape : CONFIG.cookieScalePortrait;
-            return Math.round(Math.min(
-                CONFIG.cookieMaxSize, 
-                Math.max(CONFIG.cookieMinSize, shortSide * scale)
-            ));
+        const playSound = (type) => {
+            if (!state.sound) return;
+            // Здесь можно добавить Web Audio API или <audio> элементы
+            // Для демо — визуальная обратная связь
         };
 
-        const debounce = (fn, delay) => {
-            let timeout;
-            return (...args) => {
-                clearTimeout(timeout);
-                timeout = setTimeout(() => fn.apply(this, args), delay);
-            };
-        };
-
-        // === Позиционирование печеньки ===
-        const positionCookie = (el, target, withRandom = true, animate = false) => {
-            const zone = els.zones[target];
-            if (!zone) return;
-            
-            const rect = zone.getBoundingClientRect();
-            const sz = getCookieSize();
-            const rx = withRandom ? (Math.random() - 0.5) * rect.width * 0.42 : 0;
-            const ry = withRandom ? (Math.random() - 0.5) * rect.height * 0.38 : 0;
-            
-            if (animate) {
-                el.style.transition = 'all 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
-            } else {
-                el.style.transition = 'none';
-            }
-            
-            el.style.cssText += `
-                width: ${sz}px !important;
-                height: ${sz}px !important;
-                font-size: ${Math.round(sz * 0.48)}px !important;
-                left: ${rect.left + rect.width/2 - sz/2 + rx}px !important;
-                top: ${rect.top + rect.height/2 - sz/2 + ry}px !important;
-                transform: scale(0.84) rotate(${(Math.random() * 36) - 18}deg) !important;
-            `;
-        };
-
-        // === Создание печеньки ===
-        const spawnCookie = () => {
-            if (state.total >= CONFIG.limit || state.isUpdating || state.isComplete) return;
-            
-            state.total++;
-            const sz = getCookieSize();
-            const rect = els.cookieBox.getBoundingClientRect();
-            
-            const cookie = document.createElement('div');
-            cookie.className = 'cookie';
-            cookie.setAttribute('role', 'button');
-            cookie.setAttribute('aria-label', 'Печенька');
-            cookie.innerHTML = '<i class="fa-solid fa-cookie"></i>';
-            cookie.style.cssText = `
-                width: ${sz}px;
-                height: ${sz}px;
-                font-size: ${Math.round(sz * 0.48)}px;
-                left: ${rect.left + rect.width/2 - sz/2}px;
-                top: ${rect.top - 8}px;
+        // === Создание предмета ===
+        const createItem = (itemData) => {
+            const el = document.createElement('div');
+            el.className = 'draggable-item';
+            el.dataset.id = itemData.id;
+            el.dataset.type = itemData.type;
+            el.setAttribute('role', 'button');
+            el.setAttribute('tabindex', '0');
+            el.setAttribute('aria-label', `${itemData.label} — ${itemData.type === 'edible' ? 'съедобное' : 'несъедобное'}`);
+            el.innerHTML = `
+                <span class="item-icon" aria-hidden="true">${itemData.icon}</span>
+                <span class="item-label">${itemData.label}</span>
             `;
             
-            document.body.appendChild(cookie);
-            state.cookies.push(cookie);
+            // Позиция в области предметов
+            el.style.position = 'relative';
             
-            // Анимация вылета
-            requestAnimationFrame(() => {
-                if (!cookie.isConnected) return;
-                const angle = Math.PI + Math.random() * Math.PI;
-                const dist = 85 + Math.random() * 55;
-                cookie.style.transition = 'all 0.48s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
-                cookie.style.transform = `translate(${Math.cos(angle)*dist}px, ${Math.sin(angle)*dist}px) scale(1.02)`;
-            });
-            
-            // Обработчик клика
-            const onCookieClick = (e) => {
-                e.stopPropagation();
-                if (cookie.dataset.assigned || state.isUpdating) return;
-                
-                const preferred = state.counts.cat <= state.counts.dog ? 'cat' : 'dog';
-                assignCookie(cookie, preferred);
-            };
-            cookie.addEventListener('click', onCookieClick, { passive: true });
-            
-            // Поддержка клавиатуры
-            cookie.addEventListener('keydown', (e) => {
+            // Обработчики
+            setupDrag(el);
+            el.addEventListener('click', () => !state.isDragging && handleItemClick(el));
+            el.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
-                    onCookieClick(e);
+                    handleItemClick(el);
                 }
             });
+            
+            return el;
         };
 
-        // === Назначение печеньки животному ===
-        const assignCookie = (el, target) => {
-            if (state.isUpdating) return;
+        // === Drag & Drop логика ===
+        const setupDrag = (el) => {
+            let startX, startY, initialLeft, initialTop, isDragging = false;
             
-            // Обновляем счётчики
-            if (!el.dataset.assigned) {
-                state.counts[target]++;
-            } else if (el.dataset.assigned !== target) {
-                state.counts[el.dataset.assigned]--;
-                state.counts[target]++;
+            const onStart = (e) => {
+                if (el.classList.contains('sorted') || state.isComplete) return;
+                e.preventDefault();
+                
+                const touch = e.touches?.[0] || e;
+                startX = touch.clientX;
+                startY = touch.clientY;
+                
+                const rect = el.getBoundingClientRect();
+                initialLeft = rect.left;
+                initialTop = rect.top;
+                
+                el.style.transition = 'none';
+                el.style.zIndex = '1000';
+                
+                const onMove = (e2) => {
+                    e2.preventDefault();
+                    const t = e2.touches?.[0] || e2;
+                    const dx = t.clientX - startX;
+                    const dy = t.clientY - startY;
+                    
+                    if (!isDragging && (Math.abs(dx) > CONFIG.dragSensitivity || Math.abs(dy) > CONFIG.dragSensitivity)) {
+                        isDragging = true;
+                        state.isDragging = true;
+                        el.classList.add('dragging');
+                        document.body.style.userSelect = 'none';
+                    }
+                    
+                    if (isDragging) {
+                        el.style.transform = `translate(${dx}px, ${dy}px) scale(1.12)`;
+                    }
+                };
+                
+                const onEnd = (e2) => {
+                    document.removeEventListener('touchmove', onMove, { passive: false });
+                    document.removeEventListener('mousemove', onMove, { passive: false });
+                    document.removeEventListener('touchend', onEnd);
+                    document.removeEventListener('mouseup', onEnd);
+                    
+                    if (isDragging) {
+                        checkDrop(el, e2);
+                    }
+                    
+                    setTimeout(() => {
+                        el.style.transition = `transform ${CONFIG.animDuration}ms cubic-bezier(0.25,0.46,0.45,0.94)`;
+                        el.style.transform = 'translate(0,0) scale(1)';
+                        el.style.zIndex = '';
+                        el.classList.remove('dragging');
+                        state.isDragging = false;
+                        document.body.style.userSelect = '';
+                    }, 10);
+                };
+                
+                document.addEventListener('touchmove', onMove, { passive: false });
+                document.addEventListener('mousemove', onMove, { passive: false });
+                document.addEventListener('touchend', onEnd, { passive: true });
+                document.addEventListener('mouseup', onEnd, { passive: true });
+            };
+            
+            el.addEventListener('touchstart', onStart, { passive: false });
+            el.addEventListener('mousedown', onStart, { passive: false });
+        };
+
+        // === Проверка дропа в зону ===
+        const checkDrop = (el, e) => {
+            const touch = e.changedTouches?.[0] || e;
+            const x = touch.clientX;
+            const y = touch.clientY;
+            
+            for (const [type, zone] of Object.entries(els.zones)) {
+                const rect = zone.getBoundingClientRect();
+                const dist = Math.hypot(
+                    x - (rect.left + rect.width/2),
+                    y - (rect.top + rect.height/2)
+                );
+                
+                if (dist < CONFIG.snapThreshold) {
+                    sortItem(el, type);
+                    return;
+                }
             }
-            
-            el.dataset.assigned = target;
-            els.counts.cat.textContent = state.counts.cat;
-            els.counts.dog.textContent = state.counts.dog;
-            
-            // Позиционируем
-            positionCookie(el, target, true, true);
-            
-            updateUI();
+            // Если не в зону — вернуть на место с анимацией
+            playSound('wrong');
+            el.classList.add('wrong');
+            setTimeout(() => el.classList.remove('wrong'), 400);
         };
 
-        // === Клик по животному (притянуть свободную печеньку) ===
-        const handleAnimalClick = (target) => {
-            if (state.isUpdating || state.isComplete) return;
-            const freeCookie = state.cookies.find(c => !c.dataset.assigned);
-            if (freeCookie) assignCookie(freeCookie, target);
-        };
-
-        // === Обновление UI ===
-        const updateUI = () => {
-            if (state.total === CONFIG.limit && !state.isComplete) {
-                els.btnDone.disabled = false;
-                els.btnDone.style.cssText = 'background:#2563eb; opacity:1; pointer-events:auto;';
-            }
-        };
-
-        // === Проверка завершения ===
-        const checkFinal = () => {
-            if (state.isUpdating) return;
+        // === Сортировка предмета ===
+        const sortItem = (el, targetType) => {
+            const actualType = el.dataset.type;
+            const isCorrect = actualType === targetType;
             
-            if (state.counts.cat === CONFIG.targetPerAnimal && 
-                state.counts.dog === CONFIG.targetPerAnimal) {
-                state.isComplete = true;
-                els.winUI.style.display = 'flex';
-                // Фокус на кнопку для доступности
-                setTimeout(() => els.winUI.querySelector('button')?.focus(), 100);
-            } else {
-                // Визуальная обратная связь об ошибке
-                const btn = els.btnDone;
-                const originalBg = btn.style.background;
-                btn.style.background = '#ef4444';
-                btn.textContent = '⚠️ Поровну!';
+            el.classList.add('sorted', isCorrect ? 'correct' : 'wrong');
+            el.style.pointerEvents = 'none';
+            
+            if (isCorrect) {
+                state.sorted[targetType]++;
+                els.counts[targetType].textContent = state.sorted[targetType];
+                playSound('correct');
+                
+                // Анимация "полёта" в зону
+                const zone = els.zones[targetType];
+                const zoneRect = zone.getBoundingClientRect();
+                const elRect = el.getBoundingClientRect();
+                
+                const dx = (zoneRect.left + zoneRect.width/2) - (elRect.left + elRect.width/2);
+                const dy = (zoneRect.top + zoneRect.height/2) - (elRect.top + elRect.height/2);
+                
+                el.style.transition = `transform ${CONFIG.animDuration}ms cubic-bezier(0.25,0.46,0.45,0.94)`;
+                el.style.transform = `translate(${dx}px, ${dy}px) scale(0.88)`;
                 
                 setTimeout(() => {
-                    btn.style.background = originalBg || '#2563eb';
-                    btn.textContent = 'Готово!';
-                }, 1100);
+                    el.style.transform = 'scale(0.88)';
+                    // Переместить в DOM зоны для правильного позиционирования
+                    zone.appendChild(el);
+                    el.style.position = 'absolute';
+                    el.style.left = '50%';
+                    el.style.top = '50%';
+                    el.style.transform = 'translate(-50%, -50%) scale(0.88)';
+                }, CONFIG.animDuration);
+                
+            } else {
+                playSound('wrong');
+                // Визуальная ошибка, но предмет остаётся
+                setTimeout(() => {
+                    el.classList.remove('wrong');
+                    el.classList.add('correct'); // Всё равно считаем "отсортированным" для прогресса
+                    state.sorted[targetType]++;
+                    els.counts[targetType].textContent = state.sorted[targetType];
+                }, 400);
             }
+            
+            updateCheckButton();
+        };
+
+        // === Клик по предмету (альтернатива драгу) ===
+        const handleItemClick = (el) => {
+            if (el.classList.contains('sorted') || state.isComplete) return;
+            
+            // Авто-сортировка: если предмет съедобный — в корзину, иначе в коробку
+            const targetType = el.dataset.type;
+            sortItem(el, targetType);
+        };
+
+        // === Обновление кнопки проверки ===
+        const updateCheckButton = () => {
+            const totalSorted = state.sorted.edible + state.sorted.inedible;
+            els.checkBtn.disabled = totalSorted < CONFIG.totalItems || state.isComplete;
+        };
+
+        // === Проверка результатов ===
+        const checkResults = () => {
+            if (state.isComplete) return;
+            
+            // Проверяем, все ли предметы отсортированы правильно
+            const items = els.itemsArea.querySelectorAll('.draggable-item.sorted');
+            const zones = Object.values(els.zones);
+            let allCorrect = true;
+            
+            zones.forEach(zone => {
+                zone.querySelectorAll('.draggable-item.sorted').forEach(item => {
+                    if (item.dataset.type !== zone.dataset.type) {
+                        allCorrect = false;
+                        item.classList.add('wrong');
+                        setTimeout(() => item.classList.remove('wrong'), 500);
+                    }
+                });
+            });
+            
+            if (allCorrect && (state.sorted.edible + state.sorted.inedible) >= CONFIG.correctThreshold) {
+                state.isComplete = true;
+                els.winModal.style.display = 'flex';
+                playSound('win');
+                // Фокус на кнопку для доступности
+                setTimeout(() => els.winModal.querySelector('button')?.focus(), 100);
+            } else {
+                // Визуальная обратная связь
+                els.checkBtn.textContent = '⚠️ Попробуй ещё!';
+                els.checkBtn.style.background = '#f97316';
+                setTimeout(() => {
+                    els.checkBtn.textContent = 'Проверить';
+                    els.checkBtn.style.background = '';
+                }, 1200);
+            }
+        };
+
+        // === Переключение звука ===
+        const toggleSound = () => {
+            state.sound = !state.sound;
+            els.soundToggle.setAttribute('aria-pressed', state.sound);
+            els.soundIcon.className = `fa-solid ${state.sound ? 'fa-volume-high' : 'fa-volume-xmark'}`;
+            els.soundToggle.querySelector('span').textContent = state.sound ? 'Со звуком' : 'Без звука';
         };
 
         // === Перезапуск игры ===
         const restartGame = () => {
-            // Удаляем печеньки
-            state.cookies.forEach(c => c.remove());
-            state.cookies = [];
-            
             // Сброс состояния
-            state.counts = { cat: 0, dog: 0 };
-            state.total = 0;
-            state.isUpdating = false;
+            state.sorted = { edible: 0, inedible: 0 };
             state.isComplete = false;
+            state.isDragging = false;
+            
+            // Очистка зон
+            Object.values(els.zones).forEach(zone => {
+                zone.querySelectorAll('.draggable-item').forEach(el => el.remove());
+            });
+            els.itemsArea.innerHTML = '';
             
             // Сброс UI
-            els.counts.cat.textContent = '0';
-            els.counts.dog.textContent = '0';
-            els.btnDone.disabled = true;
-            els.btnDone.style.cssText = 'background:#94a3b8; opacity:0.4; pointer-events:none;';
-            els.winUI.style.display = 'none';
+            els.counts.edible.textContent = '0';
+            els.counts.inedible.textContent = '0';
+            els.checkBtn.disabled = true;
+            els.checkBtn.textContent = 'Проверить';
+            els.winModal.style.display = 'none';
+            
+            // Генерация новых предметов
+            initItems();
+            updateCheckButton();
         };
 
-        // === Обработка изменения ориентации/размера ===
-        const handleResize = debounce(() => {
-            if (state.isUpdating) return;
-            state.isUpdating = true;
-            
-            const sz = getCookieSize();
-            
-            // Обновляем все печеньки
-            state.cookies.forEach(cookie => {
-                cookie.style.width = `${sz}px`;
-                cookie.style.height = `${sz}px`;
-                cookie.style.fontSize = `${Math.round(sz * 0.48)}px`;
-                
-                if (cookie.dataset.assigned) {
-                    positionCookie(cookie, cookie.dataset.assigned, false, false);
-                }
+        // === Инициализация предметов ===
+        const initItems = () => {
+            const shuffled = shuffle(ITEMS).slice(0, CONFIG.totalItems);
+            shuffled.forEach(itemData => {
+                const el = createItem(itemData);
+                els.itemsArea.appendChild(el);
             });
-            
-            updateUI();
-            
-            // Разблокируем обновление после задержки
-            setTimeout(() => { state.isUpdating = false; }, 80);
-            
-        }, CONFIG.resizeDebounce);
+        };
+
+        // === Обработка ресайза ===
+        const handleResize = (() => {
+            let timeout;
+            return () => {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => {
+                    // Пересчёт позиций уже отсортированных предметов при повороте
+                    Object.entries(els.zones).forEach(([type, zone]) => {
+                        zone.querySelectorAll('.draggable-item.sorted').forEach(el => {
+                            el.style.position = 'absolute';
+                            el.style.left = '50%';
+                            el.style.top = '50%';
+                            el.style.transform = 'translate(-50%, -50%) scale(0.88)';
+                        });
+                    });
+                }, 100);
+            };
+        })();
 
         // === Инициализация ===
         const init = () => {
             initDOM();
+            initItems();
             
-            // Слушатели событий
+            // Слушатели
+            els.checkBtn.addEventListener('click', checkResults);
+            els.soundToggle.addEventListener('click', toggleSound);
+            
+            // Drag-over визуал для зон
+            Object.values(els.zones).forEach(zone => {
+                zone.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    zone.classList.add('drag-over');
+                });
+                zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+                zone.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    zone.classList.remove('drag-over');
+                });
+                // Клик по зоне для сортировки выбранного предмета
+                zone.addEventListener('click', (e) => {
+                    if (state.isComplete) return;
+                    const unsorted = document.querySelector('.draggable-item:not(.sorted)');
+                    if (unsorted && !state.isDragging) {
+                        sortItem(unsorted, zone.dataset.type);
+                    }
+                });
+            });
+            
+            // События ориентации
             window.addEventListener('resize', handleResize, { passive: true });
-            window.addEventListener('orientationchange', () => {
-                setTimeout(handleResize, CONFIG.orientationDebounce);
-            }, { passive: true });
+            window.addEventListener('orientationchange', () => setTimeout(handleResize, 200), { passive: true });
             
-            // Предотвращение зума при двойном тапе
+            // Защита от зума двойным тапом
             let lastTouchEnd = 0;
             document.addEventListener('touchend', (e) => {
                 const now = Date.now();
@@ -676,23 +797,13 @@
                 lastTouchEnd = now;
             }, { passive: false });
             
-            // Поддержка клавиатуры для основных элементов
-            document.getElementById('cookie-box')?.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
+            // Поддержка клавиатуры для кнопки проверки
+            els.checkBtn.addEventListener('keydown', (e) => {
+                if ((e.key === 'Enter' || e.key === ' ') && !els.checkBtn.disabled) {
                     e.preventDefault();
-                    spawnCookie();
+                    checkResults();
                 }
             });
-            
-            els.btnDone?.addEventListener('keydown', (e) => {
-                if ((e.key === 'Enter' || e.key === ' ') && !els.btnDone.disabled) {
-                    e.preventDefault();
-                    checkFinal();
-                }
-            });
-            
-            // Первичная калибровка
-            handleResize();
         };
 
         // Запуск
