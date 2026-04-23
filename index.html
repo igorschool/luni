@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Задание 1: Помоги Луни</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Nunito', sans-serif;
+            background: linear-gradient(180deg, #e0f2fe 0%, #f0f9ff 100%);
+            touch-action: none;
+            overflow: hidden;
+        }
+        .drag-item {
+            cursor: grab;
+            transition: transform 0.2s, box-shadow 0.2s;
+            user-select: none;
+            touch-action: none;
+        }
+        .drop-zone {
+            transition: all 0.3s;
+            border: 4px dashed transparent;
+        }
+        .drop-zone.active {
+            border-color: #3b82f6;
+            background-color: rgba(59, 130, 246, 0.1);
+            transform: scale(1.02);
+        }
+        .luni-bubble {
+            position: relative;
+            background: white;
+            border-radius: 20px;
+            padding: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .float-anim {
+            animation: float 3s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        .overlay {
+            position: fixed;
+            inset: 0;
+            background: white;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .luni-avatar {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: 1rem;
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col p-4">
+
+    <!-- Стартовый экран -->
+    <div id="start-screen" class="overlay">
+        <div class="mb-6 w-40 h-40">
+            <img src="2.png" alt="Аватар Луни" class="luni-avatar" onerror="this.src='https://via.placeholder.com/150?text=Luni'">
+        </div>
+        <h2 class="text-2xl font-black text-slate-700 mb-6 text-center px-6">Готов помочь Луни?</h2>
+        <div class="flex flex-col gap-3 w-full max-w-xs">
+            <button onclick="initApp(true)" class="bg-blue-600 text-white font-bold py-4 rounded-2xl text-xl shadow-lg active:scale-95 transition">🔊 Играть со звуком</button>
+            <button onclick="initApp(false)" class="bg-slate-200 text-slate-600 font-bold py-4 rounded-2xl text-xl active:scale-95 transition">🔇 Без звука</button>
+        </div>
+    </div>
+
+    <!-- Основной интерфейс игры -->
+    <div class="max-w-4xl mx-auto w-full flex items-start justify-between mb-4">
+        <div class="flex-1 mr-4">
+            <h1 class="text-2xl font-black text-blue-600 mb-1">Задание №1</h1>
+            <div class="luni-bubble text-sm md:text-base font-bold text-gray-700 leading-tight">
+                Распредели покупки! <br>
+                <span class="text-blue-500">Съедобное</span> — в корзину, <span class="text-orange-500">Несъедобное</span> — в коробку!
+            </div>
+        </div>
+        <div id="luni-bot" class="w-24 h-24 md:w-32 md:h-32 float-anim cursor-pointer" onclick="playAudio()">
+            <img src="2.png" alt="Аватар Луни" class="luni-avatar">
+        </div>
+    </div>
+
+    <!-- Контейнер для предметов -->
+    <div id="items-container" class="max-w-4xl mx-auto w-full bg-white/80 backdrop-blur rounded-3xl p-4 shadow-inner grid grid-cols-2 md:grid-cols-4 gap-3 mb-6 min-h-[200px]"></div>
+
+    <!-- Зоны сброса -->
+    <div class="max-w-4xl mx-auto w-full grid grid-cols-2 gap-4 flex-1 mb-4">
+        <div id="basket" class="drop-zone flex flex-col items-center justify-center p-4 rounded-3xl bg-blue-50 border-2 border-blue-100 h-full relative" data-type="food">
+            <span class="text-xs font-black text-blue-400 uppercase mb-1">Съедобное</span>
+            <div class="text-5xl mb-2">🧺</div>
+            <div id="basket-content" class="absolute inset-0 pointer-events-none flex flex-wrap content-end justify-center p-2 gap-1"></div>
+        </div>
+        <div id="box" class="drop-zone flex flex-col items-center justify-center p-4 rounded-3xl bg-orange-50 border-2 border-orange-100 h-full relative" data-type="cleaning">
+            <span class="text-xs font-black text-orange-400 uppercase mb-1">Несъедобное</span>
+            <div class="text-5xl mb-2">📦</div>
+            <div id="box-content" class="absolute inset-0 pointer-events-none flex flex-wrap content-end justify-center p-2 gap-1"></div>
+        </div>
+    </div>
+
+    <!-- Окно успеха -->
+    <div id="success-modal" class="fixed inset-0 bg-black/40 hidden flex items-center justify-center z-50 p-6">
+        <div class="bg-white rounded-3xl p-8 max-w-xs w-full text-center shadow-2xl">
+            <div class="text-6xl mb-4">✨</div>
+            <h2 class="text-2xl font-black text-blue-600 mb-2">Молодец!</h2>
+            <p class="text-gray-500 mb-6">Ты отличный помощник!</p>
+            <button onclick="location.reload()" class="bg-blue-600 text-white font-bold py-3 px-8 rounded-full shadow-lg">Играть еще раз</button>
+        </div>
+    </div>
+
+    <script>
+        // Имена файлов в локальной папке
+        const AUDIO_FILE_NAME = '1.mp3';
+        
+        let gameAudio = null;
+        let useSound = false;
+        let score = 0;
+
+        const itemsData = [
+            { name: 'Яблоко', icon: '🍎', type: 'food' },
+            { name: 'Губка', icon: '🧽', type: 'cleaning' },
+            { name: 'Банан', icon: '🍌', type: 'food' },
+            { name: 'Молоко', icon: '🥛', type: 'food' },
+            { name: 'Мыло', icon: '🧼', type: 'cleaning' },
+            { name: 'Спрей', icon: '🧴', type: 'cleaning' },
+            { name: 'Щетка', icon: '🧹', type: 'cleaning' },
+            { name: 'Хлеб', icon: '🍞', type: 'food' }
+        ];
+
+        function initApp(sound) {
+            useSound = sound;
+            document.getElementById('start-screen').classList.add('hidden');
+            
+            if (sound) {
+                gameAudio = new Audio(AUDIO_FILE_NAME);
+                gameAudio.onerror = () => {
+                    console.error("Аудиофайл 1.mp3 не найден в папке.");
+                };
+            }
+            
+            renderItems();
+            if (useSound) playAudio();
+        }
+
+        function playAudio() {
+            if (gameAudio) {
+                gameAudio.currentTime = 0;
+                gameAudio.play().catch(err => console.log("Воспроизведение заблокировано браузером."));
+            }
+        }
+
+        function renderItems() {
+            const container = document.getElementById('items-container');
+            container.innerHTML = '';
+            itemsData.forEach(item => {
+                const el = document.createElement('div');
+                el.className = 'drag-item bg-white rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center justify-center p-2 h-24 md:h-28';
+                el.draggable = true;
+                el.dataset.name = item.name;
+                el.dataset.type = item.type;
+                el.innerHTML = `<div class="text-4xl md:text-5xl mb-1">${item.icon}</div><div class="text-[10px] font-black text-slate-400 uppercase">${item.name}</div>`;
+                
+                el.ontouchstart = handleTouchStart;
+                el.ontouchmove = handleTouchMove;
+                el.ontouchend = handleTouchEnd;
+                
+                el.ondragstart = (e) => {
+                    e.dataTransfer.setData('text', item.name);
+                    el.classList.add('opacity-40');
+                };
+                el.ondragend = () => el.classList.remove('opacity-40');
+                container.appendChild(el);
+            });
+        }
+
+        let curDrag = null;
+        function handleTouchStart(e) {
+            curDrag = e.currentTarget;
+            curDrag.style.position = 'fixed';
+            curDrag.style.zIndex = '1000';
+            curDrag.style.width = '100px';
+            moveAt(e.touches[0].clientX, e.touches[0].clientY);
+        }
+        function handleTouchMove(e) {
+            if (curDrag) {
+                e.preventDefault();
+                moveAt(e.touches[0].clientX, e.touches[0].clientY);
+            }
+        }
+        function handleTouchEnd(e) {
+            if (!curDrag) return;
+            const t = e.changedTouches[0];
+            const zone = document.elementFromPoint(t.clientX, t.clientY)?.closest('.drop-zone');
+            
+            if (zone && zone.dataset.type === curDrag.dataset.type) {
+                dropIn(curDrag, zone);
+            } else {
+                curDrag.style.position = 'static';
+                curDrag.style.width = 'auto';
+            }
+            curDrag = null;
+        }
+        function moveAt(x, y) {
+            curDrag.style.left = (x - 50) + 'px';
+            curDrag.style.top = (y - 50) + 'px';
+        }
+
+        function dropIn(el, zone) {
+            const content = document.getElementById(zone.id + '-content');
+            const icon = document.createElement('div');
+            icon.className = 'text-3xl animate-bounce';
+            icon.textContent = el.querySelector('.text-4xl, .text-5xl').textContent;
+            content.appendChild(icon);
+            el.remove();
+            score++;
+            if (score === itemsData.length) {
+                document.getElementById('success-modal').classList.remove('hidden');
+            }
+        }
+
+        document.querySelectorAll('.drop-zone').forEach(z => {
+            z.ondragover = (e) => { e.preventDefault(); z.classList.add('active'); };
+            z.ondragleave = () => z.classList.remove('active');
+            z.ondrop = (e) => {
+                z.classList.remove('active');
+                const name = e.dataTransfer.getData('text');
+                const el = document.querySelector(`[data-name="${name}"]`);
+                if (el && el.dataset.type === z.dataset.type) dropIn(el, z);
+            };
+        });
+    </script>
+</body>
+</html>
