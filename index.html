@@ -2,298 +2,704 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Задание 1: Помоги Луни</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#fef3c7">
+    <title>Задание 3: Покорми друзей</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        body {
-            font-family: 'Nunito', sans-serif;
-            background: linear-gradient(180deg, #e0f2fe 0%, #f0f9ff 100%);
-            /* НЕ блокируем touch-action на body — это мешало работе */
-            overflow: hidden;
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --safe-top: env(safe-area-inset-top, 0px);
+            --safe-bottom: env(safe-area-inset-bottom, 0px);
+            --safe-left: env(safe-area-inset-left, 0px);
+            --safe-right: env(safe-area-inset-right, 0px);
+            --unit-vw: 1vw;
+            --unit-vh: 1vh;
+            --cookie-size: 56px;
         }
-        .drag-item {
-            cursor: grab;
-            transition: transform 0.2s, box-shadow 0.2s;
-            user-select: none;
-            touch-action: none; /* только на самом элементе */
+
+        @supports not (height: 100dvh) {
+            :root { --unit-vh: 1vh; }
         }
-        .drop-zone {
-            transition: all 0.3s;
-            border: 4px dashed transparent;
+
+        html {
+            -webkit-text-size-adjust: 100%;
+            text-size-adjust: 100%;
         }
-        .drop-zone.active {
-            border-color: #3b82f6;
-            background-color: rgba(59, 130, 246, 0.1);
-            transform: scale(1.02);
-        }
-        .luni-bubble {
-            position: relative;
-            background: white;
-            border-radius: 20px;
-            padding: 15px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        }
-        .float-anim {
-            animation: float 3s ease-in-out infinite;
-        }
-        @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
-        }
-        .overlay {
-            position: fixed;
-            inset: 0;
-            background: white;
-            z-index: 100;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-        .luni-avatar {
+
+        html, body {
             width: 100%;
             height: 100%;
-            object-fit: contain;
-            border-radius: 1rem;
+            overscroll-behavior: none;
+            touch-action: none;
         }
 
-        /* Клон, который летит за пальцем */
-        #drag-clone {
-            position: fixed;
+        body {
+            font-family: 'Nunito', system-ui, -apple-system, sans-serif;
+            background: #fef3c7;
+            color: #1e293b;
+            overflow: hidden;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            user-select: none;
+            width: 100dvw;
+            height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            padding: calc(var(--safe-top) + 0.5rem) calc(var(--safe-left) + 0.5rem) 
+                     calc(var(--safe-bottom) + 0.5rem) calc(var(--safe-right) + 0.5rem);
+        }
+
+        /* === Адаптивные брейкпоинты === */
+        @media (orientation: landscape) and (max-height: 500px) {
+            :root { --cookie-size: 48px; }
+            body { padding: 4px 8px; font-size: 14px; }
+        }
+        @media (orientation: landscape) and (max-height: 400px) {
+            :root { --cookie-size: 42px; }
+            .header-sub, .click-hint { display: none !important; }
+        }
+        @media (max-width: 360px) {
+            :root { --cookie-size: 44px; }
+        }
+
+        /* === Интерактивные элементы === */
+        .cookie {
+            background: linear-gradient(145deg, #d97706, #b45309);
+            border: 3px solid #fde68a;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fef3c7;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            position: absolute;
+            z-index: 1000;
+            will-change: transform, left, top;
+            transition: transform 0.1s ease;
+            touch-action: manipulation;
+        }
+        .cookie:active { transform: scale(0.92) rotate(2deg); }
+        .cookie i { pointer-events: none; }
+
+        .bowl-hit-zone {
+            position: relative;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            cursor: pointer;
+            border-radius: 20px;
+            width: clamp(120px, 24vw, 260px);
+            height: clamp(65px, 12vw, 130px);
+            transition: transform 0.15s ease;
+            touch-action: manipulation;
+        }
+        .bowl-hit-zone:active { transform: scale(0.97); }
+
+        .bowl-svg {
+            width: 100%;
+            height: 100%;
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.12));
             pointer-events: none;
-            z-index: 9999;
-            opacity: 0.85;
-            transform: scale(1.1);
-            transition: none;
-            width: 100px;
-            height: 100px;
+        }
+
+        .animal-icon {
+            line-height: 1;
+            margin-bottom: -4px;
+            transition: transform 0.2s ease;
+            font-size: clamp(42px, 8.5vw, 96px);
+            will-change: transform;
+        }
+        .animal-container:active .animal-icon { transform: scale(1.05); }
+
+        .animal-name {
+            margin-top: clamp(4px, 1vw, 12px);
+            font-weight: 900;
+            font-size: clamp(12px, 2.3vw, 24px);
+            text-transform: uppercase;
+            letter-spacing: -0.02em;
+            text-align: center;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .counter {
+            position: absolute;
+            right: clamp(4px, 0.8vw, 10px);
+            top: 50%;
+            transform: translateY(-50%);
+            background: #ef4444;
+            color: white;
+            width: clamp(22px, 3.6vw, 38px);
+            height: clamp(22px, 3.6vw, 38px);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            font-size: clamp(10px, 1.7vw, 16px);
+            border: 3px solid white;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.15);
+            z-index: 50;
+            transition: transform 0.2s ease;
+        }
+        .counter:active { transform: translateY(-50%) scale(1.1); }
+
+        /* === Коробка с печеньками === */
+        #cookie-box {
+            cursor: pointer;
+            transition: transform 0.12s ease;
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+            will-change: transform;
+            touch-action: manipulation;
+            padding: 4px;
         }
+        #cookie-box:active { transform: scale(0.94); }
+
+        .box-body {
+            width: clamp(85px, 15vw, 150px);
+            height: clamp(60px, 11vw, 120px);
+            background: linear-gradient(180deg, #b45309, #92400e);
+            border-radius: 0 0 14px 14px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-top: 4px solid #78350f;
+        }
+        .box-lid {
+            width: calc(clamp(85px, 15vw, 150px) + 12px);
+            height: clamp(18px, 3.2vw, 30px);
+            background: linear-gradient(180deg, #92400e, #78350f);
+            border-radius: 8px;
+            position: absolute;
+            top: calc(-1 * clamp(10px, 1.8vw, 16px));
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        .box-icon {
+            font-size: clamp(24px, 4.2vw, 46px);
+            color: #fde68a;
+            opacity: 0.6;
+        }
+
+        .click-hint {
+            animation: bounce 1.8s infinite;
+            font-weight: 900;
+            color: #92400e;
+            font-size: clamp(10px, 1.5vw, 13px);
+            text-transform: uppercase;
+            margin-bottom: clamp(3px, 0.5vw, 7px);
+            text-align: center;
+            padding: 0 6px;
+            line-height: 1.2;
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-6px); }
+        }
+
+        /* === Кнопка "Готово" === */
+        #btn-done {
+            font-weight: 900;
+            text-transform: uppercase;
+            border-radius: 14px;
+            font-size: clamp(14px, 2.1vw, 20px);
+            padding: clamp(10px, 1.4vw, 14px) clamp(24px, 3.8vw, 44px);
+            width: 100%;
+            max-width: 260px;
+            transition: all 0.18s ease;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border: none;
+            cursor: pointer;
+            touch-action: manipulation;
+            will-change: background, opacity;
+        }
+        #btn-done:active { transform: scale(0.98); }
+        #btn-done:disabled { opacity: 0.4; pointer-events: none; }
+
+        /* === Заголовок === */
+        .header-title { font-size: clamp(16px, 3vw, 28px); line-height: 1.1; }
+        .header-sub   { font-size: clamp(11px, 1.9vw, 18px); line-height: 1.2; }
+        .header-icon  { font-size: clamp(20px, 3.8vw, 40px); }
+
+        /* === Расположение животных === */
+        .animals-row {
+            display: flex;
+            justify-content: space-around;
+            align-items: flex-end;
+            gap: clamp(12px, 2.8vw, 24px);
+            width: 100%;
+            max-width: 850px;
+            flex-wrap: wrap;
+        }
+
+        /* === Нижняя панель === */
+        .bottom-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: clamp(8px, 1.4vh, 16px);
+            margin-bottom: clamp(8px, 2vh, 18px);
+            width: 100%;
+        }
+
+        /* === Ландшафтный режим: компактная раскладка === */
+        @media (orientation: landscape) and (max-height: 480px) {
+            .animals-row { gap: 6px; }
+            .animal-icon { font-size: clamp(38px, 6.5vw, 72px); }
+            .animal-name { font-size: clamp(11px, 1.8vw, 16px); margin-top: 2px; }
+            .bowl-hit-zone { width: clamp(100px, 20vw, 200px); height: clamp(55px, 9vw, 95px); }
+            
+            .bottom-area {
+                flex-direction: row;
+                justify-content: center;
+                gap: 10px;
+                margin-bottom: 6px;
+            }
+            #cookie-box { transform: scale(0.82); transform-origin: center bottom; }
+            #btn-done { max-width: 170px; padding: 8px 20px; font-size: 14px; }
+        }
+
+        @media (orientation: landscape) and (max-height: 380px) {
+            #cookie-box { transform: scale(0.72); }
+            #btn-done { font-size: 13px; padding: 7px 18px; }
+            .header-sub { display: none !important; }
+        }
+
+        /* === Экран победы === */
+        #win-ui {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(120,53,15,0.96);
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 5000;
+            padding: max(16px, var(--safe-top)) max(16px, var(--safe-right)) 
+                     max(16px, var(--safe-bottom)) max(16px, var(--safe-left));
+            text-align: center;
+            animation: fadeIn 0.28s ease-out;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+
+        #win-ui .win-card {
+            background: white;
+            padding: clamp(24px, 4vw, 36px) clamp(20px, 3vw, 28px);
+            border-radius: 26px;
+            border: 7px solid #4ade80;
+            max-width: 360px;
+            width: 100%;
+            box-shadow: 0 24px 48px rgba(0,0,0,0.35);
+        }
+        #win-ui .win-emoji { font-size: clamp(72px, 14vw, 110px); margin-bottom: 10px; line-height: 1; }
+        #win-ui h2 { 
+            font-size: clamp(20px, 4.8vw, 34px); 
+            font-weight: 900; 
+            color: #1e293b; 
+            text-transform: uppercase; 
+            margin: 0 0 8px;
+            letter-spacing: -0.02em;
+        }
+        #win-ui p { 
+            font-size: clamp(13px, 2.4vw, 18px); 
+            font-weight: 700; 
+            color: #475569; 
+            margin: 0 0 18px;
+            line-height: 1.35;
+        }
+        #win-ui button {
+            background: linear-gradient(145deg, #22c55e, #16a34a);
+            color: white;
+            font-weight: 900;
+            font-size: clamp(15px, 2.9vw, 20px);
+            text-transform: uppercase;
+            border-radius: 14px;
+            padding: clamp(12px, 1.4vh, 14px) clamp(24px, 2.8vw, 28px);
+            width: 100%;
+            border: none;
+            cursor: pointer;
+            transition: transform 0.1s ease, filter 0.15s ease;
+            touch-action: manipulation;
+        }
+        #win-ui button:active { transform: scale(0.97); filter: brightness(0.95); }
+
+        /* === Утилиты для отладки (можно удалить в продакшене) === */
+        /* .debug { outline: 1px dashed rgba(255,0,0,0.3); } */
     </style>
 </head>
-<body class="h-screen flex flex-col p-4">
+<body>
 
-    <!-- Стартовый экран -->
-    <div id="start-screen" class="overlay">
-        <div class="mb-6 w-40 h-40">
-            <img src="2.png" alt="Аватар Луни" class="luni-avatar" onerror="this.src='https://via.placeholder.com/150?text=Luni'">
+    <!-- Header -->
+    <header style="display:flex; align-items:center; justify-content:space-between; margin-bottom: clamp(8px, 1.1vh, 14px);">
+        <div>
+            <h1 class="header-title font-black text-amber-900 uppercase">Задание №3</h1>
+            <p class="header-sub font-bold" style="color:#92400e; opacity:0.85;">Нажимай на печеньки или миски!</p>
         </div>
-        <h2 class="text-2xl font-black text-slate-700 mb-6 text-center px-6">Готов помочь Луни?</h2>
-        <div class="flex flex-col gap-3 w-full max-w-xs">
-            <button onclick="initApp(true)" class="bg-blue-600 text-white font-bold py-4 rounded-2xl text-xl shadow-lg active:scale-95 transition">🔊 Играть со звуком</button>
-            <button onclick="initApp(false)" class="bg-slate-200 text-slate-600 font-bold py-4 rounded-2xl text-xl active:scale-95 transition">🔇 Без звука</button>
+        <div style="background:rgba(255,255,255,0.6); padding:clamp(6px,1vw,10px); border-radius:50%; border:2px solid #fde68a;">
+            <i class="fa-solid fa-face-smile header-icon text-amber-600"></i>
         </div>
-    </div>
+    </header>
 
-    <!-- Основной интерфейс игры -->
-    <div class="max-w-4xl mx-auto w-full flex items-start justify-between mb-4">
-        <div class="flex-1 mr-4">
-            <h1 class="text-2xl font-black text-blue-600 mb-1">Задание №1</h1>
-            <div class="luni-bubble text-sm md:text-base font-bold text-gray-700 leading-tight">
-                Распредели покупки! <br>
-                <span class="text-blue-500">Съедобное</span> — в корзину, <span class="text-orange-500">Несъедобное</span> — в коробку!
+    <!-- Game Area -->
+    <main id="game-area" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:space-between; min-height:0; width:100%;">
+
+        <!-- Animals Row -->
+        <div class="animals-row" id="animals-row">
+
+            <!-- Cat -->
+            <div class="animal-container" style="display:flex; flex-direction:column; align-items:center; position:relative;" 
+                 onclick="handleAnimalClick('cat')" role="button" tabindex="0" aria-label="Миска котика Снежка">
+                <div id="icon-cat" class="animal-icon" style="color:#a855f7;" aria-hidden="true">
+                    <i class="fa-solid fa-cat"></i>
+                </div>
+                <div id="zone-cat" class="bowl-hit-zone" data-target="cat" aria-label="Миска Снежка">
+                    <div id="count-cat" class="counter" aria-live="polite">0</div>
+                    <svg class="bowl-svg" viewBox="0 0 200 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                        <path d="M10 20C10 20 20 80 100 80C180 80 190 20 190 20H10Z" fill="#67E8F9"/>
+                        <ellipse cx="100" cy="20" rx="90" ry="15" fill="#22D3EE"/>
+                    </svg>
+                </div>
+                <span class="animal-name" style="color:#581c87;">Снежок</span>
+            </div>
+
+            <!-- Dog -->
+            <div class="animal-container" style="display:flex; flex-direction:column; align-items:center; position:relative;" 
+                 onclick="handleAnimalClick('dog')" role="button" tabindex="0" aria-label="Миска собачки Барона">
+                <div id="icon-dog" class="animal-icon" style="color:#f97316;" aria-hidden="true">
+                    <i class="fa-solid fa-dog"></i>
+                </div>
+                <div id="zone-dog" class="bowl-hit-zone" data-target="dog" aria-label="Миска Барона">
+                    <div id="count-dog" class="counter" aria-live="polite">0</div>
+                    <svg class="bowl-svg" viewBox="0 0 200 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                        <path d="M10 20C10 20 20 80 100 80C180 80 190 20 190 20H10Z" fill="#FDE047"/>
+                        <ellipse cx="100" cy="20" rx="90" ry="15" fill="#FACC15"/>
+                    </svg>
+                </div>
+                <span class="animal-name" style="color:#7c2d12;">Барон</span>
             </div>
         </div>
-        <div id="luni-bot" class="w-24 h-24 md:w-32 md:h-32 float-anim cursor-pointer" onclick="playAudio()">
-            <img src="2.png" alt="Аватар Луни" class="luni-avatar">
+
+        <!-- Bottom Controls -->
+        <div class="bottom-area">
+            <div id="cookie-box" onclick="spawnCookie()" role="button" tabindex="0" aria-label="Коробка с печеньками, нажми чтобы взять">
+                <div class="click-hint">Нажми сюда! 👆</div>
+                <div class="box-body">
+                    <div class="box-lid"></div>
+                    <i class="fa-solid fa-cookie-bite box-icon" aria-hidden="true"></i>
+                </div>
+            </div>
+
+            <button id="btn-done" onclick="checkFinal()" disabled aria-live="polite">
+                Готово!
+            </button>
+        </div>
+    </main>
+
+    <!-- Win Modal -->
+    <div id="win-ui" role="dialog" aria-modal="true" aria-labelledby="win-title">
+        <div class="win-card">
+            <div class="win-emoji" aria-hidden="true">🍪✨</div>
+            <h2 id="win-title">Ура!</h2>
+            <p>Ты разделил всё поровну. Друзья довольны!</p>
+            <button onclick="restartGame()" aria-label="Начать заново">Играть ещё</button>
         </div>
     </div>
-
-    <!-- Контейнер для предметов -->
-    <div id="items-container" class="max-w-4xl mx-auto w-full bg-white/80 backdrop-blur rounded-3xl p-4 shadow-inner grid grid-cols-2 md:grid-cols-4 gap-3 mb-6 min-h-[200px]"></div>
-
-    <!-- Зоны сброса -->
-    <div class="max-w-4xl mx-auto w-full grid grid-cols-2 gap-4 flex-1 mb-4">
-        <div id="basket" class="drop-zone flex flex-col items-center justify-center p-4 rounded-3xl bg-blue-50 border-2 border-blue-100 h-full relative" data-type="food">
-            <span class="text-xs font-black text-blue-400 uppercase mb-1">Съедобное</span>
-            <div class="text-5xl mb-2">🧺</div>
-            <div id="basket-content" class="absolute inset-0 pointer-events-none flex flex-wrap content-end justify-center p-2 gap-1"></div>
-        </div>
-        <div id="box" class="drop-zone flex flex-col items-center justify-center p-4 rounded-3xl bg-orange-50 border-2 border-orange-100 h-full relative" data-type="cleaning">
-            <span class="text-xs font-black text-orange-400 uppercase mb-1">Несъедобное</span>
-            <div class="text-5xl mb-2">📦</div>
-            <div id="box-content" class="absolute inset-0 pointer-events-none flex flex-wrap content-end justify-center p-2 gap-1"></div>
-        </div>
-    </div>
-
-    <!-- Окно успеха -->
-    <div id="success-modal" class="fixed inset-0 bg-black/40 hidden flex items-center justify-center z-50 p-6">
-        <div class="bg-white rounded-3xl p-8 max-w-xs w-full text-center shadow-2xl">
-            <div class="text-6xl mb-4">✨</div>
-            <h2 class="text-2xl font-black text-blue-600 mb-2">Молодец!</h2>
-            <p class="text-gray-500 mb-6">Ты отличный помощник!</p>
-            <button onclick="location.reload()" class="bg-blue-600 text-white font-bold py-3 px-8 rounded-full shadow-lg">Играть еще раз</button>
-        </div>
-    </div>
-
-    <!-- Клон для перетаскивания -->
-    <div id="drag-clone" style="display:none;"></div>
 
     <script>
-        const AUDIO_FILE_NAME = '1.mp3';
-        
-        let gameAudio = null;
-        let useSound = false;
-        let score = 0;
+        // === Конфигурация ===
+        const CONFIG = {
+            limit: 10,
+            targetPerAnimal: 5,
+            cookieMinSize: 40,
+            cookieMaxSize: 72,
+            cookieScalePortrait: 0.07,
+            cookieScaleLandscape: 0.085,
+            resizeDebounce: 120,
+            orientationDebounce: 250
+        };
 
-        const itemsData = [
-            { name: 'Яблоко', icon: '🍎', type: 'food' },
-            { name: 'Губка', icon: '🧽', type: 'cleaning' },
-            { name: 'Банан', icon: '🍌', type: 'food' },
-            { name: 'Молоко', icon: '🥛', type: 'food' },
-            { name: 'Мыло', icon: '🧼', type: 'cleaning' },
-            { name: 'Спрей', icon: '🧴', type: 'cleaning' },
-            { name: 'Щетка', icon: '🧹', type: 'cleaning' },
-            { name: 'Хлеб', icon: '🍞', type: 'food' }
-        ];
+        // === Состояние игры ===
+        const state = {
+            counts: { cat: 0, dog: 0 },
+            total: 0,
+            cookies: [],
+            isUpdating: false,
+            isComplete: false
+        };
 
-        function initApp(sound) {
-            useSound = sound;
-            document.getElementById('start-screen').classList.add('hidden');
-            
-            if (sound) {
-                gameAudio = new Audio(AUDIO_FILE_NAME);
-                gameAudio.onerror = () => console.error("Аудиофайл не найден.");
-            }
-            
-            renderItems();
-            if (useSound) playAudio();
-        }
-
-        function playAudio() {
-            if (gameAudio) {
-                gameAudio.currentTime = 0;
-                gameAudio.play().catch(() => {});
-            }
-        }
-
-        function renderItems() {
-            const container = document.getElementById('items-container');
-            container.innerHTML = '';
-            itemsData.forEach(item => {
-                const el = document.createElement('div');
-                el.className = 'drag-item bg-white rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center justify-center p-2 h-24 md:h-28';
-                el.draggable = true;
-                el.dataset.name = item.name;
-                el.dataset.type = item.type;
-                el.innerHTML = `<div class="text-4xl md:text-5xl mb-1">${item.icon}</div><div class="text-[10px] font-black text-slate-400 uppercase">${item.name}</div>`;
-                
-                // Touch события
-                el.addEventListener('touchstart', handleTouchStart, { passive: false });
-                el.addEventListener('touchmove', handleTouchMove, { passive: false });
-                el.addEventListener('touchend', handleTouchEnd, { passive: false });
-                
-                // Mouse/Desktop drag
-                el.ondragstart = (e) => {
-                    e.dataTransfer.setData('text', item.name);
-                    el.classList.add('opacity-40');
-                };
-                el.ondragend = () => el.classList.remove('opacity-40');
-
-                container.appendChild(el);
-            });
-        }
-
-        // ── Touch drag-and-drop (исправленная версия) ──────────────────────
-        let curDrag = null;       // оригинальный элемент
-        let clone = null;         // визуальный клон
-        let currentZone = null;   // зона под пальцем
-
-        function handleTouchStart(e) {
-            e.preventDefault();
-            curDrag = e.currentTarget;
-
-            // Скрываем оригинал (но не удаляем, чтобы вернуть при промахе)
-            curDrag.style.opacity = '0.3';
-
-            // Создаём клон, который летит за пальцем
-            clone = document.getElementById('drag-clone');
-            clone.innerHTML = curDrag.innerHTML;
-            clone.style.display = 'flex';
-
-            const touch = e.touches[0];
-            positionClone(touch.clientX, touch.clientY);
-        }
-
-        function handleTouchMove(e) {
-            e.preventDefault();
-            if (!curDrag) return;
-
-            const touch = e.touches[0];
-            positionClone(touch.clientX, touch.clientY);
-
-            // Подсвечиваем зону под пальцем
-            // Временно скрываем клон, чтобы elementFromPoint нашёл то, что под ним
-            clone.style.display = 'none';
-            const el = document.elementFromPoint(touch.clientX, touch.clientY);
-            clone.style.display = 'flex';
-
-            const zone = el ? el.closest('.drop-zone') : null;
-
-            if (zone !== currentZone) {
-                if (currentZone) currentZone.classList.remove('active');
-                currentZone = zone;
-                if (currentZone) currentZone.classList.add('active');
-            }
-        }
-
-        function handleTouchEnd(e) {
-            e.preventDefault();
-            if (!curDrag) return;
-
-            // Убираем клон
-            clone.style.display = 'none';
-            if (currentZone) currentZone.classList.remove('active');
-
-            if (currentZone && currentZone.dataset.type === curDrag.dataset.type) {
-                // Верная зона — кидаем предмет
-                dropIn(curDrag, currentZone);
-            } else {
-                // Промах — возвращаем на место
-                curDrag.style.opacity = '1';
-            }
-
-            curDrag = null;
-            currentZone = null;
-        }
-
-        function positionClone(x, y) {
-            clone.style.left = (x - 50) + 'px';
-            clone.style.top  = (y - 50) + 'px';
-        }
-
-        // ── Drop-зоны (мышь/desktop) ────────────────────────────────────────
-        document.querySelectorAll('.drop-zone').forEach(z => {
-            z.ondragover = (e) => { e.preventDefault(); z.classList.add('active'); };
-            z.ondragleave = () => z.classList.remove('active');
-            z.ondrop = (e) => {
-                z.classList.remove('active');
-                const name = e.dataTransfer.getData('text');
-                const el = document.querySelector(`[data-name="${name}"]`);
-                if (el && el.dataset.type === z.dataset.type) dropIn(el, z);
+        // === DOM элементы ===
+        const els = {};
+        const initDOM = () => {
+            els.cookieBox = document.getElementById('cookie-box');
+            els.btnDone = document.getElementById('btn-done');
+            els.winUI = document.getElementById('win-ui');
+            els.counts = {
+                cat: document.getElementById('count-cat'),
+                dog: document.getElementById('count-dog')
             };
-        });
+            els.zones = {
+                cat: document.getElementById('zone-cat'),
+                dog: document.getElementById('zone-dog')
+            };
+        };
 
-        // ── Общая логика сброса ─────────────────────────────────────────────
-        function dropIn(el, zone) {
-            const content = document.getElementById(zone.id + '-content');
-            const icon = document.createElement('div');
-            icon.className = 'text-3xl animate-bounce';
-            icon.textContent = el.querySelector('.text-4xl, .text-5xl').textContent;
-            content.appendChild(icon);
-            el.remove();
-            score++;
-            if (score === itemsData.length) {
-                document.getElementById('success-modal').classList.remove('hidden');
+        // === Утилиты ===
+        const isLandscape = () => window.matchMedia('(orientation: landscape)').matches;
+        
+        const getCookieSize = () => {
+            const shortSide = Math.min(window.innerWidth, window.innerHeight);
+            const scale = isLandscape() ? CONFIG.cookieScaleLandscape : CONFIG.cookieScalePortrait;
+            return Math.round(Math.min(
+                CONFIG.cookieMaxSize, 
+                Math.max(CONFIG.cookieMinSize, shortSide * scale)
+            ));
+        };
+
+        const debounce = (fn, delay) => {
+            let timeout;
+            return (...args) => {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => fn.apply(this, args), delay);
+            };
+        };
+
+        // === Позиционирование печеньки ===
+        const positionCookie = (el, target, withRandom = true, animate = false) => {
+            const zone = els.zones[target];
+            if (!zone) return;
+            
+            const rect = zone.getBoundingClientRect();
+            const sz = getCookieSize();
+            const rx = withRandom ? (Math.random() - 0.5) * rect.width * 0.42 : 0;
+            const ry = withRandom ? (Math.random() - 0.5) * rect.height * 0.38 : 0;
+            
+            if (animate) {
+                el.style.transition = 'all 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+            } else {
+                el.style.transition = 'none';
             }
+            
+            el.style.cssText += `
+                width: ${sz}px !important;
+                height: ${sz}px !important;
+                font-size: ${Math.round(sz * 0.48)}px !important;
+                left: ${rect.left + rect.width/2 - sz/2 + rx}px !important;
+                top: ${rect.top + rect.height/2 - sz/2 + ry}px !important;
+                transform: scale(0.84) rotate(${(Math.random() * 36) - 18}deg) !important;
+            `;
+        };
+
+        // === Создание печеньки ===
+        const spawnCookie = () => {
+            if (state.total >= CONFIG.limit || state.isUpdating || state.isComplete) return;
+            
+            state.total++;
+            const sz = getCookieSize();
+            const rect = els.cookieBox.getBoundingClientRect();
+            
+            const cookie = document.createElement('div');
+            cookie.className = 'cookie';
+            cookie.setAttribute('role', 'button');
+            cookie.setAttribute('aria-label', 'Печенька');
+            cookie.innerHTML = '<i class="fa-solid fa-cookie"></i>';
+            cookie.style.cssText = `
+                width: ${sz}px;
+                height: ${sz}px;
+                font-size: ${Math.round(sz * 0.48)}px;
+                left: ${rect.left + rect.width/2 - sz/2}px;
+                top: ${rect.top - 8}px;
+            `;
+            
+            document.body.appendChild(cookie);
+            state.cookies.push(cookie);
+            
+            // Анимация вылета
+            requestAnimationFrame(() => {
+                if (!cookie.isConnected) return;
+                const angle = Math.PI + Math.random() * Math.PI;
+                const dist = 85 + Math.random() * 55;
+                cookie.style.transition = 'all 0.48s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+                cookie.style.transform = `translate(${Math.cos(angle)*dist}px, ${Math.sin(angle)*dist}px) scale(1.02)`;
+            });
+            
+            // Обработчик клика
+            const onCookieClick = (e) => {
+                e.stopPropagation();
+                if (cookie.dataset.assigned || state.isUpdating) return;
+                
+                const preferred = state.counts.cat <= state.counts.dog ? 'cat' : 'dog';
+                assignCookie(cookie, preferred);
+            };
+            cookie.addEventListener('click', onCookieClick, { passive: true });
+            
+            // Поддержка клавиатуры
+            cookie.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onCookieClick(e);
+                }
+            });
+        };
+
+        // === Назначение печеньки животному ===
+        const assignCookie = (el, target) => {
+            if (state.isUpdating) return;
+            
+            // Обновляем счётчики
+            if (!el.dataset.assigned) {
+                state.counts[target]++;
+            } else if (el.dataset.assigned !== target) {
+                state.counts[el.dataset.assigned]--;
+                state.counts[target]++;
+            }
+            
+            el.dataset.assigned = target;
+            els.counts.cat.textContent = state.counts.cat;
+            els.counts.dog.textContent = state.counts.dog;
+            
+            // Позиционируем
+            positionCookie(el, target, true, true);
+            
+            updateUI();
+        };
+
+        // === Клик по животному (притянуть свободную печеньку) ===
+        const handleAnimalClick = (target) => {
+            if (state.isUpdating || state.isComplete) return;
+            const freeCookie = state.cookies.find(c => !c.dataset.assigned);
+            if (freeCookie) assignCookie(freeCookie, target);
+        };
+
+        // === Обновление UI ===
+        const updateUI = () => {
+            if (state.total === CONFIG.limit && !state.isComplete) {
+                els.btnDone.disabled = false;
+                els.btnDone.style.cssText = 'background:#2563eb; opacity:1; pointer-events:auto;';
+            }
+        };
+
+        // === Проверка завершения ===
+        const checkFinal = () => {
+            if (state.isUpdating) return;
+            
+            if (state.counts.cat === CONFIG.targetPerAnimal && 
+                state.counts.dog === CONFIG.targetPerAnimal) {
+                state.isComplete = true;
+                els.winUI.style.display = 'flex';
+                // Фокус на кнопку для доступности
+                setTimeout(() => els.winUI.querySelector('button')?.focus(), 100);
+            } else {
+                // Визуальная обратная связь об ошибке
+                const btn = els.btnDone;
+                const originalBg = btn.style.background;
+                btn.style.background = '#ef4444';
+                btn.textContent = '⚠️ Поровну!';
+                
+                setTimeout(() => {
+                    btn.style.background = originalBg || '#2563eb';
+                    btn.textContent = 'Готово!';
+                }, 1100);
+            }
+        };
+
+        // === Перезапуск игры ===
+        const restartGame = () => {
+            // Удаляем печеньки
+            state.cookies.forEach(c => c.remove());
+            state.cookies = [];
+            
+            // Сброс состояния
+            state.counts = { cat: 0, dog: 0 };
+            state.total = 0;
+            state.isUpdating = false;
+            state.isComplete = false;
+            
+            // Сброс UI
+            els.counts.cat.textContent = '0';
+            els.counts.dog.textContent = '0';
+            els.btnDone.disabled = true;
+            els.btnDone.style.cssText = 'background:#94a3b8; opacity:0.4; pointer-events:none;';
+            els.winUI.style.display = 'none';
+        };
+
+        // === Обработка изменения ориентации/размера ===
+        const handleResize = debounce(() => {
+            if (state.isUpdating) return;
+            state.isUpdating = true;
+            
+            const sz = getCookieSize();
+            
+            // Обновляем все печеньки
+            state.cookies.forEach(cookie => {
+                cookie.style.width = `${sz}px`;
+                cookie.style.height = `${sz}px`;
+                cookie.style.fontSize = `${Math.round(sz * 0.48)}px`;
+                
+                if (cookie.dataset.assigned) {
+                    positionCookie(cookie, cookie.dataset.assigned, false, false);
+                }
+            });
+            
+            updateUI();
+            
+            // Разблокируем обновление после задержки
+            setTimeout(() => { state.isUpdating = false; }, 80);
+            
+        }, CONFIG.resizeDebounce);
+
+        // === Инициализация ===
+        const init = () => {
+            initDOM();
+            
+            // Слушатели событий
+            window.addEventListener('resize', handleResize, { passive: true });
+            window.addEventListener('orientationchange', () => {
+                setTimeout(handleResize, CONFIG.orientationDebounce);
+            }, { passive: true });
+            
+            // Предотвращение зума при двойном тапе
+            let lastTouchEnd = 0;
+            document.addEventListener('touchend', (e) => {
+                const now = Date.now();
+                if (now - lastTouchEnd <= 300) e.preventDefault();
+                lastTouchEnd = now;
+            }, { passive: false });
+            
+            // Поддержка клавиатуры для основных элементов
+            document.getElementById('cookie-box')?.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    spawnCookie();
+                }
+            });
+            
+            els.btnDone?.addEventListener('keydown', (e) => {
+                if ((e.key === 'Enter' || e.key === ' ') && !els.btnDone.disabled) {
+                    e.preventDefault();
+                    checkFinal();
+                }
+            });
+            
+            // Первичная калибровка
+            handleResize();
+        };
+
+        // Запуск
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
         }
     </script>
 </body>
