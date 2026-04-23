@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Задание 1: Помоги Луни</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
@@ -10,42 +10,37 @@
         body {
             font-family: 'Nunito', sans-serif;
             background: linear-gradient(180deg, #e0f2fe 0%, #f0f9ff 100%);
+            /* НЕ блокируем touch-action на body — это мешало работе */
             overflow: hidden;
-            -webkit-user-select: none;
+        }
+        .drag-item {
+            cursor: grab;
+            transition: transform 0.2s, box-shadow 0.2s;
             user-select: none;
-        }
-        .item-card {
-            transition: all 0.2s;
-            cursor: pointer;
-        }
-        .item-card.selected {
-            border: 4px solid #3b82f6;
-            transform: scale(1.05);
-            background-color: #eff6ff;
-            box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+            touch-action: none; /* только на самом элементе */
         }
         .drop-zone {
             transition: all 0.3s;
+            border: 4px dashed transparent;
         }
-        .drop-zone.active-target {
-            animation: pulse 1s infinite;
-        }
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.03); }
-            100% { transform: scale(1); }
+        .drop-zone.active {
+            border-color: #3b82f6;
+            background-color: rgba(59, 130, 246, 0.1);
+            transform: scale(1.02);
         }
         .luni-bubble {
+            position: relative;
             background: white;
             border-radius: 20px;
             padding: 15px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
-        .flying {
-            position: fixed;
-            z-index: 1000;
-            transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            pointer-events: none;
+        .float-anim {
+            animation: float 3s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
         }
         .overlay {
             position: fixed;
@@ -57,55 +52,98 @@
             align-items: center;
             justify-content: center;
         }
+        .luni-avatar {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: 1rem;
+        }
+
+        /* Клон, который летит за пальцем */
+        #drag-clone {
+            position: fixed;
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0.85;
+            transform: scale(1.1);
+            transition: none;
+            width: 100px;
+            height: 100px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+        }
     </style>
 </head>
 <body class="h-screen flex flex-col p-4">
 
+    <!-- Стартовый экран -->
     <div id="start-screen" class="overlay">
         <div class="mb-6 w-40 h-40">
-            <img src="2.png" alt="Луни" class="w-full h-full object-contain rounded-2xl" onerror="this.src='https://via.placeholder.com/150?text=Luni'">
+            <img src="2.png" alt="Аватар Луни" class="luni-avatar" onerror="this.src='https://via.placeholder.com/150?text=Luni'">
         </div>
-        <h2 class="text-2xl font-black text-slate-700 mb-6 text-center px-6">Поможешь Луни разложить покупки?</h2>
-        <button onclick="initApp()" class="bg-blue-600 text-white font-bold py-4 px-10 rounded-2xl text-xl shadow-lg active:scale-95 transition">Да, давай!</button>
+        <h2 class="text-2xl font-black text-slate-700 mb-6 text-center px-6">Готов помочь Луни?</h2>
+        <div class="flex flex-col gap-3 w-full max-w-xs">
+            <button onclick="initApp(true)" class="bg-blue-600 text-white font-bold py-4 rounded-2xl text-xl shadow-lg active:scale-95 transition">🔊 Играть со звуком</button>
+            <button onclick="initApp(false)" class="bg-slate-200 text-slate-600 font-bold py-4 rounded-2xl text-xl active:scale-95 transition">🔇 Без звука</button>
+        </div>
     </div>
 
+    <!-- Основной интерфейс игры -->
     <div class="max-w-4xl mx-auto w-full flex items-start justify-between mb-4">
         <div class="flex-1 mr-4">
             <h1 class="text-2xl font-black text-blue-600 mb-1">Задание №1</h1>
-            <div class="luni-bubble text-sm md:text-base font-bold text-gray-700">
-                Нажми на предмет, а потом — куда его положить!
+            <div class="luni-bubble text-sm md:text-base font-bold text-gray-700 leading-tight">
+                Распредели покупки! <br>
+                <span class="text-blue-500">Съедобное</span> — в корзину, <span class="text-orange-500">Несъедобное</span> — в коробку!
             </div>
         </div>
-        <div class="w-20 h-20 md:w-28 md:h-28">
-            <img src="2.png" alt="Луни" class="w-full h-full object-contain">
+        <div id="luni-bot" class="w-24 h-24 md:w-32 md:h-32 float-anim cursor-pointer" onclick="playAudio()">
+            <img src="2.png" alt="Аватар Луни" class="luni-avatar">
         </div>
     </div>
 
+    <!-- Контейнер для предметов -->
     <div id="items-container" class="max-w-4xl mx-auto w-full bg-white/80 backdrop-blur rounded-3xl p-4 shadow-inner grid grid-cols-2 md:grid-cols-4 gap-3 mb-6 min-h-[200px]"></div>
 
+    <!-- Зоны сброса -->
     <div class="max-w-4xl mx-auto w-full grid grid-cols-2 gap-4 flex-1 mb-4">
-        <div id="basket" onclick="handleZoneClick('food')" class="drop-zone flex flex-col items-center justify-center p-4 rounded-3xl bg-blue-100 border-4 border-blue-200 h-full relative">
-            <span class="text-xs font-black text-blue-500 uppercase mb-1">Съедобное</span>
-            <div class="text-6xl mb-2">🧺</div>
-            <div id="basket-content" class="flex flex-wrap justify-center gap-1"></div>
+        <div id="basket" class="drop-zone flex flex-col items-center justify-center p-4 rounded-3xl bg-blue-50 border-2 border-blue-100 h-full relative" data-type="food">
+            <span class="text-xs font-black text-blue-400 uppercase mb-1">Съедобное</span>
+            <div class="text-5xl mb-2">🧺</div>
+            <div id="basket-content" class="absolute inset-0 pointer-events-none flex flex-wrap content-end justify-center p-2 gap-1"></div>
         </div>
-        <div id="box" onclick="handleZoneClick('cleaning')" class="drop-zone flex flex-col items-center justify-center p-4 rounded-3xl bg-orange-100 border-4 border-orange-200 h-full relative">
-            <span class="text-xs font-black text-orange-500 uppercase mb-1">Несъедобное</span>
-            <div class="text-6xl mb-2">📦</div>
-            <div id="box-content" class="flex flex-wrap justify-center gap-1"></div>
+        <div id="box" class="drop-zone flex flex-col items-center justify-center p-4 rounded-3xl bg-orange-50 border-2 border-orange-100 h-full relative" data-type="cleaning">
+            <span class="text-xs font-black text-orange-400 uppercase mb-1">Несъедобное</span>
+            <div class="text-5xl mb-2">📦</div>
+            <div id="box-content" class="absolute inset-0 pointer-events-none flex flex-wrap content-end justify-center p-2 gap-1"></div>
         </div>
     </div>
 
+    <!-- Окно успеха -->
     <div id="success-modal" class="fixed inset-0 bg-black/40 hidden flex items-center justify-center z-50 p-6">
         <div class="bg-white rounded-3xl p-8 max-w-xs w-full text-center shadow-2xl">
             <div class="text-6xl mb-4">✨</div>
-            <h2 class="text-2xl font-black text-blue-600 mb-2">Здорово!</h2>
-            <p class="text-gray-500 mb-6">Все вещи на своих местах!</p>
-            <button onclick="location.reload()" class="bg-blue-600 text-white font-bold py-3 px-8 rounded-full shadow-lg">Еще раз</button>
+            <h2 class="text-2xl font-black text-blue-600 mb-2">Молодец!</h2>
+            <p class="text-gray-500 mb-6">Ты отличный помощник!</p>
+            <button onclick="location.reload()" class="bg-blue-600 text-white font-bold py-3 px-8 rounded-full shadow-lg">Играть еще раз</button>
         </div>
     </div>
 
+    <!-- Клон для перетаскивания -->
+    <div id="drag-clone" style="display:none;"></div>
+
     <script>
+        const AUDIO_FILE_NAME = '1.mp3';
+        
+        let gameAudio = null;
+        let useSound = false;
+        let score = 0;
+
         const itemsData = [
             { name: 'Яблоко', icon: '🍎', type: 'food' },
             { name: 'Губка', icon: '🧽', type: 'cleaning' },
@@ -117,97 +155,145 @@
             { name: 'Хлеб', icon: '🍞', type: 'food' }
         ];
 
-        let selectedItem = null;
-        let score = 0;
-
-        function initApp() {
+        function initApp(sound) {
+            useSound = sound;
             document.getElementById('start-screen').classList.add('hidden');
+            
+            if (sound) {
+                gameAudio = new Audio(AUDIO_FILE_NAME);
+                gameAudio.onerror = () => console.error("Аудиофайл не найден.");
+            }
+            
             renderItems();
+            if (useSound) playAudio();
+        }
+
+        function playAudio() {
+            if (gameAudio) {
+                gameAudio.currentTime = 0;
+                gameAudio.play().catch(() => {});
+            }
         }
 
         function renderItems() {
             const container = document.getElementById('items-container');
             container.innerHTML = '';
-            itemsData.forEach((item, index) => {
+            itemsData.forEach(item => {
                 const el = document.createElement('div');
-                el.className = 'item-card bg-white rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center justify-center p-2 h-24 md:h-28';
-                el.id = 'item-' + index;
+                el.className = 'drag-item bg-white rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center justify-center p-2 h-24 md:h-28';
+                el.draggable = true;
+                el.dataset.name = item.name;
+                el.dataset.type = item.type;
                 el.innerHTML = `<div class="text-4xl md:text-5xl mb-1">${item.icon}</div><div class="text-[10px] font-black text-slate-400 uppercase">${item.name}</div>`;
-                el.onclick = () => selectItem(el, item);
+                
+                // Touch события
+                el.addEventListener('touchstart', handleTouchStart, { passive: false });
+                el.addEventListener('touchmove', handleTouchMove, { passive: false });
+                el.addEventListener('touchend', handleTouchEnd, { passive: false });
+                
+                // Mouse/Desktop drag
+                el.ondragstart = (e) => {
+                    e.dataTransfer.setData('text', item.name);
+                    el.classList.add('opacity-40');
+                };
+                el.ondragend = () => el.classList.remove('opacity-40');
+
                 container.appendChild(el);
             });
         }
 
-        function selectItem(element, data) {
-            // Снимаем выделение с прошлого
-            document.querySelectorAll('.item-card').forEach(card => card.classList.remove('selected'));
-            document.querySelectorAll('.drop-zone').forEach(zone => zone.classList.remove('active-target'));
-            
-            selectedItem = { element, data };
-            element.classList.add('selected');
-            
-            // Подсвечиваем зоны, чтобы ребенок знал, что делать дальше
-            document.querySelectorAll('.drop-zone').forEach(zone => zone.classList.add('active-target'));
+        // ── Touch drag-and-drop (исправленная версия) ──────────────────────
+        let curDrag = null;       // оригинальный элемент
+        let clone = null;         // визуальный клон
+        let currentZone = null;   // зона под пальцем
+
+        function handleTouchStart(e) {
+            e.preventDefault();
+            curDrag = e.currentTarget;
+
+            // Скрываем оригинал (но не удаляем, чтобы вернуть при промахе)
+            curDrag.style.opacity = '0.3';
+
+            // Создаём клон, который летит за пальцем
+            clone = document.getElementById('drag-clone');
+            clone.innerHTML = curDrag.innerHTML;
+            clone.style.display = 'flex';
+
+            const touch = e.touches[0];
+            positionClone(touch.clientX, touch.clientY);
         }
 
-        function handleZoneClick(zoneType) {
-            if (!selectedItem) return;
+        function handleTouchMove(e) {
+            e.preventDefault();
+            if (!curDrag) return;
 
-            const targetZoneId = zoneType === 'food' ? 'basket' : 'box';
-            const targetZone = document.getElementById(targetZoneId);
+            const touch = e.touches[0];
+            positionClone(touch.clientX, touch.clientY);
 
-            if (selectedItem.data.type === zoneType) {
-                // ПРАВИЛЬНО: запускаем анимацию полета
-                flyToTarget(selectedItem.element, targetZone);
-            } else {
-                // ОШИБКА: трясем предмет
-                selectedItem.element.classList.add('animate-bounce');
-                setTimeout(() => selectedItem.element.classList.remove('animate-bounce'), 500);
+            // Подсвечиваем зону под пальцем
+            // Временно скрываем клон, чтобы elementFromPoint нашёл то, что под ним
+            clone.style.display = 'none';
+            const el = document.elementFromPoint(touch.clientX, touch.clientY);
+            clone.style.display = 'flex';
+
+            const zone = el ? el.closest('.drop-zone') : null;
+
+            if (zone !== currentZone) {
+                if (currentZone) currentZone.classList.remove('active');
+                currentZone = zone;
+                if (currentZone) currentZone.classList.add('active');
             }
         }
 
-        function flyToTarget(itemEl, zoneEl) {
-            const rect = itemEl.getBoundingClientRect();
-            const zoneRect = zoneEl.getBoundingClientRect();
+        function handleTouchEnd(e) {
+            e.preventDefault();
+            if (!curDrag) return;
 
-            // Создаем копию для анимации полета
-            const flyer = itemEl.cloneNode(true);
-            flyer.classList.remove('selected', 'item-card');
-            flyer.classList.add('flying');
-            flyer.style.left = rect.left + 'px';
-            flyer.style.top = rect.top + 'px';
-            flyer.style.width = rect.width + 'px';
-            document.body.appendChild(flyer);
+            // Убираем клон
+            clone.style.display = 'none';
+            if (currentZone) currentZone.classList.remove('active');
 
-            // Скрываем оригинал
-            itemEl.style.visibility = 'hidden';
-            itemEl.onclick = null;
+            if (currentZone && currentZone.dataset.type === curDrag.dataset.type) {
+                // Верная зона — кидаем предмет
+                dropIn(curDrag, currentZone);
+            } else {
+                // Промах — возвращаем на место
+                curDrag.style.opacity = '1';
+            }
 
-            // Через мгновение запускаем полет в центр зоны
-            setTimeout(() => {
-                flyer.style.left = (zoneRect.left + zoneRect.width / 2 - rect.width / 2) + 'px';
-                flyer.style.top = (zoneRect.top + zoneRect.height / 2 - rect.height / 2) + 'px';
-                flyer.style.transform = 'scale(0.2)';
-                flyer.style.opacity = '0';
-            }, 10);
+            curDrag = null;
+            currentZone = null;
+        }
 
-            // Убираем элементы и обновляем счет
-            setTimeout(() => {
-                flyer.remove();
-                const content = document.getElementById(zoneEl.id + '-content');
-                const miniIcon = document.createElement('div');
-                miniIcon.className = 'text-2xl';
-                miniIcon.textContent = selectedItem.data.icon;
-                content.appendChild(miniIcon);
-                
-                selectedItem = null;
-                document.querySelectorAll('.drop-zone').forEach(z => z.classList.remove('active-target'));
-                
-                score++;
-                if (score === itemsData.length) {
-                    document.getElementById('success-modal').classList.remove('hidden');
-                }
-            }, 600);
+        function positionClone(x, y) {
+            clone.style.left = (x - 50) + 'px';
+            clone.style.top  = (y - 50) + 'px';
+        }
+
+        // ── Drop-зоны (мышь/desktop) ────────────────────────────────────────
+        document.querySelectorAll('.drop-zone').forEach(z => {
+            z.ondragover = (e) => { e.preventDefault(); z.classList.add('active'); };
+            z.ondragleave = () => z.classList.remove('active');
+            z.ondrop = (e) => {
+                z.classList.remove('active');
+                const name = e.dataTransfer.getData('text');
+                const el = document.querySelector(`[data-name="${name}"]`);
+                if (el && el.dataset.type === z.dataset.type) dropIn(el, z);
+            };
+        });
+
+        // ── Общая логика сброса ─────────────────────────────────────────────
+        function dropIn(el, zone) {
+            const content = document.getElementById(zone.id + '-content');
+            const icon = document.createElement('div');
+            icon.className = 'text-3xl animate-bounce';
+            icon.textContent = el.querySelector('.text-4xl, .text-5xl').textContent;
+            content.appendChild(icon);
+            el.remove();
+            score++;
+            if (score === itemsData.length) {
+                document.getElementById('success-modal').classList.remove('hidden');
+            }
         }
     </script>
 </body>
