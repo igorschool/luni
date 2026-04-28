@@ -2,816 +2,509 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#fef3c7">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Задание 1: Помоги Луни</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-        :root {
-            --safe-top: env(safe-area-inset-top, 0px);
-            --safe-bottom: env(safe-area-inset-bottom, 0px);
-            --safe-left: env(safe-area-inset-left, 0px);
-            --safe-right: env(safe-area-inset-right, 0px);
-            --item-size: clamp(56px, 12vw, 88px);
-            --zone-height: clamp(110px, 22vh, 180px);
-            --header-gap: clamp(8px, 1.2vh, 16px);
-        }
-
-        html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
-        html, body { width: 100%; height: 100%; overscroll-behavior: none; }
+        * { box-sizing: border-box; }
 
         body {
-            font-family: 'Nunito', system-ui, -apple-system, sans-serif;
-            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-            color: #1e293b;
+            font-family: 'Nunito', sans-serif;
+            background: linear-gradient(180deg, #e0f2fe 0%, #f0f9ff 100%);
+            touch-action: none;
             overflow: hidden;
-            -webkit-tap-highlight-color: transparent;
-            -webkit-touch-callout: none;
-            user-select: none;
-            width: 100dvw;
             height: 100dvh;
+            width: 100vw;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* ── Основная обёртка ── */
+        #app-shell {
             display: flex;
             flex-direction: column;
-            padding: calc(var(--safe-top) + 0.5rem) calc(var(--safe-left) + 0.5rem) 
-                     calc(var(--safe-bottom) + 0.5rem) calc(var(--safe-right) + 0.5rem);
-        }
-
-        /* === Брейкпоинты для компактных экранов === */
-        @media (orientation: landscape) and (max-height: 500px) {
-            :root { --item-size: clamp(48px, 10vw, 72px); --zone-height: clamp(90px, 18vh, 140px); }
-            .header-sub { display: none !important; }
-        }
-        @media (orientation: landscape) and (max-height: 400px) {
-            :root { --item-size: clamp(42px, 9vw, 64px); --zone-height: clamp(80px, 16vh, 120px); }
-            .sound-toggle span { display: none; }
-        }
-        @media (max-width: 360px) {
-            :root { --item-size: clamp(48px, 13vw, 76px); }
-        }
-
-        /* === Header === */
-        .game-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: var(--header-gap);
-            margin-bottom: clamp(8px, 1.4vh, 14px);
-            flex-wrap: wrap;
-        }
-        .header-title {
-            font-size: clamp(16px, 3.2vw, 28px);
-            font-weight: 900;
-            text-transform: uppercase;
-            color: #92400e;
-            line-height: 1.1;
-        }
-        .header-sub {
-            font-size: clamp(11px, 2vw, 17px);
-            font-weight: 700;
-            color: #78350f;
-            opacity: 0.85;
-            line-height: 1.25;
-        }
-        .sound-toggle {
-            display: flex;
-            align-items: center;
-            gap: clamp(6px, 1vw, 10px);
-            background: rgba(255,255,255,0.7);
-            padding: clamp(6px, 1vw, 10px) clamp(10px, 1.8vw, 16px);
-            border-radius: 24px;
-            border: 2px solid #fde68a;
-            font-weight: 700;
-            font-size: clamp(11px, 1.8vw, 15px);
-            cursor: pointer;
-            touch-action: manipulation;
-            transition: transform 0.12s ease, background 0.15s ease;
-        }
-        .sound-toggle:active { transform: scale(0.96); background: rgba(255,255,255,0.9); }
-        .sound-toggle i { font-size: clamp(14px, 2.4vw, 20px); }
-
-        /* === Инструкция === */
-        .instruction {
-            text-align: center;
-            padding: clamp(8px, 1.4vh, 14px) clamp(12px, 2vw, 20px);
-            background: rgba(255,255,255,0.75);
-            border-radius: 16px;
-            border: 2px solid #fcd34d;
-            margin-bottom: clamp(8px, 1.2vh, 12px);
-            font-weight: 700;
-            font-size: clamp(12px, 2.2vw, 17px);
-            line-height: 1.35;
-            color: #78350f;
-        }
-        .instruction strong { color: #92400e; }
-
-        /* === Зоны сортировки === */
-        .zones-container {
-            display: flex;
-            justify-content: space-around;
-            align-items: flex-end;
-            gap: clamp(10px, 2.4vw, 24px);
+            height: 100dvh;
             width: 100%;
-            max-width: 800px;
-            margin: 0 auto;
-            flex: 1;
+            padding: env(safe-area-inset-top, 8px) env(safe-area-inset-right, 8px) env(safe-area-inset-bottom, 8px) env(safe-area-inset-left, 8px);
+        }
+
+        /* ── Шапка ── */
+        #header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 8px;
+            flex-shrink: 0;
+            padding: 8px 8px 4px;
+        }
+
+        #luni-bot {
+            flex-shrink: 0;
+            cursor: pointer;
+        }
+
+        .luni-bubble {
+            position: relative;
+            background: white;
+            border-radius: 20px;
+            padding: 10px 14px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            font-size: clamp(11px, 2.5vw, 15px);
+            font-weight: 700;
+            color: #374151;
+            line-height: 1.4;
+        }
+
+        /* ── Контейнер предметов ── */
+        #items-container {
+            display: grid;
+            background: rgba(255,255,255,0.8);
+            backdrop-filter: blur(8px);
+            border-radius: 24px;
+            padding: 10px;
+            box-shadow: inset 0 2px 8px rgba(0,0,0,0.06);
+            flex-shrink: 0;
+            margin: 0 8px;
+        }
+
+        /* ── Зоны сброса ── */
+        #drop-zones {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            flex: 1 1 auto;
             min-height: 0;
+            padding: 4px 8px 8px;
         }
 
         .drop-zone {
-            flex: 1;
-            max-width: 220px;
+            transition: all 0.3s;
+            border: 4px dashed transparent;
+            border-radius: 24px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            position: relative;
-            touch-action: manipulation;
-        }
-
-        .zone-card {
-            width: 100%;
-            height: var(--zone-height);
-            border-radius: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-start;
-            padding-top: clamp(8px, 1.5vh, 14px);
-            cursor: pointer;
-            transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
-            border: 4px dashed;
+            justify-content: center;
             position: relative;
             overflow: hidden;
+            min-height: 0;
         }
-        .zone-card:active { transform: scale(0.98); }
-        .zone-card.edible {
-            background: linear-gradient(145deg, #dcfce7, #bbf7d0);
-            border-color: #22c55e;
-            box-shadow: 0 6px 20px rgba(34,197,94,0.15);
-        }
-        .zone-card.inedible {
-            background: linear-gradient(145deg, #fee2e2, #fecaca);
-            border-color: #ef4444;
-            box-shadow: 0 6px 20px rgba(239,68,68,0.15);
-        }
-        .zone-card.drag-over {
-            border-style: solid;
+
+        .drop-zone.active {
+            border-color: #3b82f6;
+            background-color: rgba(59, 130, 246, 0.1);
             transform: scale(1.02);
-            box-shadow: 0 8px 28px rgba(0,0,0,0.2);
+        }
+
+        .zone-label {
+            font-size: clamp(9px, 2vw, 12px);
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 4px;
         }
 
         .zone-icon {
             font-size: clamp(32px, 6vw, 52px);
-            margin-bottom: clamp(4px, 0.8vh, 8px);
+            line-height: 1;
+            margin-bottom: 4px;
         }
-        .zone-title {
-            font-weight: 900;
-            font-size: clamp(13px, 2.3vw, 19px);
-            text-transform: uppercase;
-            letter-spacing: -0.01em;
-            text-align: center;
-            padding: 0 8px;
-        }
-        .zone-count {
+
+        .zone-content {
             position: absolute;
-            top: clamp(6px, 1vh, 10px);
-            right: clamp(6px, 1vw, 12px);
-            background: #1e293b;
-            color: white;
-            width: clamp(24px, 4vw, 36px);
-            height: clamp(24px, 4vw, 36px);
-            border-radius: 50%;
+            inset: 0;
+            pointer-events: none;
             display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 900;
-            font-size: clamp(11px, 1.8vw, 15px);
-            border: 2px solid white;
-        }
-
-        .items-area {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
             flex-wrap: wrap;
-            gap: clamp(6px, 1.2vw, 12px);
-            padding: clamp(4px, 0.8vh, 8px);
-            min-height: 0;
+            align-content: flex-end;
+            justify-content: center;
+            padding: 6px;
+            gap: 2px;
         }
 
-        /* === Предметы === */
-        .draggable-item {
-            width: var(--item-size);
-            height: var(--item-size);
-            border-radius: 16px;
+        /* ── Карточки предметов ── */
+        .drag-item {
+            cursor: grab;
+            user-select: none;
+            touch-action: none;
             background: white;
+            border-radius: 16px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+            border: 1px solid #f1f5f9;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: clamp(2px, 0.4vh, 4px);
-            box-shadow: 0 4px 14px rgba(0,0,0,0.12);
-            border: 3px solid #fde68a;
-            cursor: grab;
-            transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.2s ease;
-            touch-action: none;
-            will-change: transform, left, top;
-            position: relative;
-            user-select: none;
-        }
-        .draggable-item:active { cursor: grabbing; transform: scale(1.06) rotate(2deg); z-index: 100; }
-        .draggable-item.sorted { opacity: 0.6; cursor: default; transform: scale(0.94); }
-        .draggable-item.correct { border-color: #22c55e; box-shadow: 0 0 0 3px rgba(34,197,94,0.3); }
-        .draggable-item.wrong { border-color: #ef4444; box-shadow: 0 0 0 3px rgba(239,68,68,0.3); animation: shake 0.4s ease; }
-        
-        @keyframes shake {
-            0%, 100% { transform: translateX(0) scale(1.06); }
-            25% { transform: translateX(-6px) scale(1.06); }
-            75% { transform: translateX(6px) scale(1.06); }
+            transition: transform 0.15s, box-shadow 0.15s;
         }
 
-        .item-icon {
-            font-size: clamp(24px, 5vw, 38px);
-            line-height: 1;
-        }
-        .item-label {
-            font-weight: 700;
-            font-size: clamp(9px, 1.6vw, 13px);
-            text-align: center;
-            padding: 0 4px;
-            max-width: 100%;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
+        .drag-item:active { transform: scale(1.06); box-shadow: 0 6px 18px rgba(0,0,0,0.14); }
 
-        /* === Кнопка проверки === */
-        .check-btn {
-            background: linear-gradient(145deg, #3b82f6, #2563eb);
-            color: white;
+        .drag-item .item-icon { line-height: 1; }
+        .drag-item .item-name {
+            font-size: clamp(8px, 1.8vw, 11px);
             font-weight: 900;
+            color: #94a3b8;
             text-transform: uppercase;
-            border-radius: 14px;
-            font-size: clamp(14px, 2.1vw, 20px);
-            padding: clamp(10px, 1.4vh, 14px) clamp(24px, 3.8vw, 44px);
-            border: none;
-            cursor: pointer;
-            touch-action: manipulation;
-            transition: all 0.18s ease;
-            box-shadow: 0 4px 14px rgba(37,99,235,0.3);
-            margin: clamp(8px, 1.2vh, 14px) 0;
-            width: 100%;
-            max-width: 260px;
-        }
-        .check-btn:active { transform: scale(0.98); }
-        .check-btn:disabled { 
-            background: #94a3b8; 
-            opacity: 0.45; 
-            pointer-events: none; 
-            box-shadow: none;
+            margin-top: 2px;
         }
 
-        /* === Экран победы === */
-        #win-modal {
-            display: none;
+        /* ── Аватар Луни ── */
+        .luni-avatar { width: 100%; height: 100%; object-fit: contain; border-radius: 1rem; }
+
+        .float-anim { animation: float 3s ease-in-out infinite; }
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50%       { transform: translateY(-8px); }
+        }
+
+        /* ── Оверлей ── */
+        .overlay {
             position: fixed;
             inset: 0;
-            background: rgba(120,53,15,0.94);
+            background: white;
+            z-index: 100;
+            display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            z-index: 6000;
-            padding: max(16px, var(--safe-top)) max(16px, var(--safe-right)) 
-                     max(16px, var(--safe-bottom)) max(16px, var(--safe-left));
-            text-align: center;
-            animation: fadeIn 0.25s ease-out;
-        }
-        @keyframes fadeIn { from { opacity: 0; transform: scale(0.97); } to { opacity: 1; transform: scale(1); } }
-
-        .win-card {
-            background: white;
-            padding: clamp(24px, 4vw, 36px) clamp(20px, 3vw, 28px);
-            border-radius: 26px;
-            border: 7px solid #4ade80;
-            max-width: 360px;
-            width: 100%;
-            box-shadow: 0 24px 48px rgba(0,0,0,0.35);
-        }
-        .win-emoji { font-size: clamp(64px, 13vw, 96px); margin-bottom: 10px; line-height: 1; }
-        .win-title { 
-            font-size: clamp(20px, 4.8vw, 32px); 
-            font-weight: 900; 
-            color: #1e293b; 
-            text-transform: uppercase; 
-            margin: 0 0 8px;
-        }
-        .win-message { 
-            font-size: clamp(13px, 2.4vw, 18px); 
-            font-weight: 700; 
-            color: #475569; 
-            margin: 0 0 20px;
-            line-height: 1.35;
-        }
-        .win-btn {
-            background: linear-gradient(145deg, #22c55e, #16a34a);
-            color: white;
-            font-weight: 900;
-            font-size: clamp(15px, 2.9vw, 20px);
-            text-transform: uppercase;
-            border-radius: 14px;
-            padding: clamp(12px, 1.4vh, 14px) clamp(24px, 2.8vw, 28px);
-            width: 100%;
-            border: none;
-            cursor: pointer;
-            transition: transform 0.1s ease;
-            touch-action: manipulation;
-        }
-        .win-btn:active { transform: scale(0.97); }
-
-        /* === Ландшафтная компактная раскладка === */
-        @media (orientation: landscape) and (max-height: 480px) {
-            .zones-container { flex-direction: row; align-items: center; gap: 8px; }
-            .zone-card { height: var(--zone-height); }
-            .items-area { order: 3; width: 100%; justify-content: center; margin-top: 8px; }
-            .check-btn { max-width: 180px; padding: 8px 20px; font-size: 14px; margin: 6px 0; }
-        }
-        @media (orientation: landscape) and (max-height: 380px) {
-            .zone-title { font-size: clamp(11px, 2vw, 15px); }
-            .item-label { display: none; }
-            .draggable-item { width: clamp(42px, 9vw, 60px); height: clamp(42px, 9vw, 60px); }
+            padding: 24px;
         }
 
-        /* === Утилиты === */
-        .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
-        .hidden { display: none !important; }
+        /* ── Модал успеха ── */
+        #success-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.4);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+            padding: 24px;
+        }
+        #success-modal.show { display: flex; }
+
+        /* ══════════════════════════════════════════
+           PORTRAIT PHONE  (≤ 480px wide)
+        ══════════════════════════════════════════ */
+        @media (max-width: 480px) and (orientation: portrait) {
+            #luni-bot { width: 72px; height: 72px; }
+            #items-container { grid-template-columns: repeat(4, 1fr); gap: 6px; }
+            .drag-item { height: 72px; }
+            .drag-item .item-icon { font-size: 28px; }
+        }
+
+        /* ══════════════════════════════════════════
+           LANDSCAPE PHONE  (height ≤ 480px)
+        ══════════════════════════════════════════ */
+        @media (max-height: 480px) and (orientation: landscape) {
+            #header { padding: 4px 8px 2px; }
+            #luni-bot { width: 52px; height: 52px; }
+            .luni-bubble { padding: 6px 10px; }
+            #items-container {
+                grid-template-columns: repeat(8, 1fr);
+                gap: 4px;
+                padding: 6px;
+            }
+            .drag-item { height: 56px; }
+            .drag-item .item-icon { font-size: 22px; }
+            .drag-item .item-name { display: none; }
+            #drop-zones { gap: 6px; padding: 2px 8px 6px; }
+            .zone-icon { font-size: 26px; }
+            .zone-label { font-size: 9px; }
+        }
+
+        /* ══════════════════════════════════════════
+           TABLET PORTRAIT  (481px – 1024px, portrait)
+        ══════════════════════════════════════════ */
+        @media (min-width: 481px) and (max-width: 1024px) and (orientation: portrait) {
+            #luni-bot { width: 100px; height: 100px; }
+            #items-container { grid-template-columns: repeat(4, 1fr); gap: 10px; }
+            .drag-item { height: 110px; }
+            .drag-item .item-icon { font-size: 44px; }
+            .drag-item .item-name { font-size: 11px; }
+            .zone-icon { font-size: 52px; }
+        }
+
+        /* ══════════════════════════════════════════
+           TABLET LANDSCAPE  (481px – 1024px, landscape)
+        ══════════════════════════════════════════ */
+        @media (min-width: 481px) and (max-width: 1024px) and (orientation: landscape) {
+            #app-shell { flex-direction: row; flex-wrap: wrap; }
+
+            /* Левая колонка: шапка + предметы */
+            #left-col {
+                display: flex;
+                flex-direction: column;
+                flex: 1 1 55%;
+                height: 100%;
+                min-width: 0;
+            }
+
+            /* Правая колонка: зоны */
+            #drop-zones {
+                flex: 1 1 40%;
+                height: 100%;
+                padding: 8px;
+                grid-template-columns: 1fr 1fr;
+                grid-template-rows: 1fr;
+            }
+
+            #luni-bot { width: 80px; height: 80px; }
+            #items-container {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 8px;
+                flex: 1;
+                align-content: center;
+            }
+            .drag-item { height: 90px; }
+            .drag-item .item-icon { font-size: 36px; }
+        }
+
+        /* ══════════════════════════════════════════
+           DESKTOP  (> 1024px)
+        ══════════════════════════════════════════ */
+        @media (min-width: 1025px) {
+            #app-shell { max-width: 900px; margin: 0 auto; }
+            #luni-bot { width: 120px; height: 120px; }
+            #items-container { grid-template-columns: repeat(4, 1fr); gap: 12px; }
+            .drag-item { height: 120px; }
+            .drag-item .item-icon { font-size: 52px; }
+            .drag-item .item-name { font-size: 11px; }
+        }
+
+        /* Default grid fallback (portrait phones 320-480) */
+        #items-container { grid-template-columns: repeat(4, 1fr); gap: 8px; }
+        .drag-item { height: 80px; }
+        .drag-item .item-icon { font-size: 32px; }
     </style>
 </head>
 <body>
 
-    <!-- Header -->
-    <header class="game-header">
-        <div>
-            <h1 class="header-title">Задание №1</h1>
-            <p class="header-sub">Готов помочь Луни?</p>
+    <!-- Стартовый экран -->
+    <div id="start-screen" class="overlay">
+        <div class="mb-6" style="width:clamp(100px,30vw,160px);height:clamp(100px,30vw,160px)">
+            <img src="2.png" alt="Аватар Луни" class="luni-avatar" onerror="this.src='https://via.placeholder.com/150?text=Luni'">
         </div>
-        <button class="sound-toggle" id="soundToggle" aria-pressed="true" aria-label="Переключить звук">
-            <i class="fa-solid fa-volume-high" id="soundIcon"></i>
-            <span>Со звуком</span>
-        </button>
-    </header>
-
-    <!-- Instruction -->
-    <div class="instruction">
-        <strong>Распредели покупки!</strong><br>
-        🍎 Съедобное — в корзину &nbsp;|&nbsp; 📦 Несъедобное — в коробку
+        <h2 class="text-2xl font-black text-slate-700 mb-6 text-center px-6">Готов помочь Луни?</h2>
+        <div class="flex flex-col gap-3 w-full" style="max-width:280px">
+            <button onclick="initApp(true)"  class="bg-blue-600 text-white font-bold py-4 rounded-2xl text-xl shadow-lg active:scale-95 transition">🔊 Играть со звуком</button>
+            <button onclick="initApp(false)" class="bg-slate-200 text-slate-600 font-bold py-4 rounded-2xl text-xl active:scale-95 transition">🔇 Без звука</button>
+        </div>
     </div>
 
-    <!-- Main Game Area -->
-    <main style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:space-between; min-height:0; width:100%;">
-        
-        <!-- Drop Zones -->
-        <div class="zones-container">
-            
-            <!-- Edible Zone -->
-            <div class="drop-zone">
-                <div class="zone-card edible" id="zone-edible" data-type="edible" role="button" tabindex="0" aria-label="Зона для съедобных предметов">
-                    <div class="zone-count" id="count-edible" aria-live="polite">0</div>
-                    <div class="zone-icon">🧺</div>
-                    <div class="zone-title">Съедобное</div>
+    <!-- Основной интерфейс -->
+    <div id="app-shell">
+
+        <!-- Левая колонка (только в landscape-tablet используется явно) -->
+        <div id="left-col" style="display:contents">
+
+            <!-- Шапка -->
+            <div id="header">
+                <div style="flex:1;min-width:0">
+                    <h1 class="font-black text-blue-600 mb-1" style="font-size:clamp(16px,4vw,24px)">Задание №1</h1>
+                    <div class="luni-bubble">
+                        Распредели покупки!<br>
+                        <span class="text-blue-500">Съедобное</span> — в корзину,
+                        <span class="text-orange-500">Несъедобное</span> — в коробку!
+                    </div>
+                </div>
+                <div id="luni-bot" class="float-anim" onclick="playAudio()">
+                    <img src="2.png" alt="Аватар Луни" class="luni-avatar"
+                         onerror="this.src='https://via.placeholder.com/150?text=Luni'">
                 </div>
             </div>
 
-            <!-- Items Area (center) -->
-            <div class="items-area" id="items-area" aria-label="Предметы для сортировки"></div>
+            <!-- Предметы -->
+            <div id="items-container"></div>
 
-            <!-- Inedible Zone -->
-            <div class="drop-zone">
-                <div class="zone-card inedible" id="zone-inedible" data-type="inedible" role="button" tabindex="0" aria-label="Зона для несъедобных предметов">
-                    <div class="zone-count" id="count-inedible" aria-live="polite">0</div>
-                    <div class="zone-icon">📦</div>
-                    <div class="zone-title">Несъедобное</div>
-                </div>
+        </div><!-- /left-col -->
+
+        <!-- Зоны сброса -->
+        <div id="drop-zones">
+            <div id="basket" class="drop-zone bg-blue-50 border-2 border-blue-100" data-type="food">
+                <span class="zone-label text-blue-400">Съедобное</span>
+                <div class="zone-icon">🧺</div>
+                <div id="basket-content" class="zone-content"></div>
+            </div>
+            <div id="box" class="drop-zone bg-orange-50 border-2 border-orange-100" data-type="cleaning">
+                <span class="zone-label text-orange-400">Несъедобное</span>
+                <div class="zone-icon">📦</div>
+                <div id="box-content" class="zone-content"></div>
             </div>
         </div>
 
-        <!-- Check Button -->
-        <button class="check-btn" id="checkBtn" disabled>Проверить</button>
-    </main>
+    </div><!-- /app-shell -->
 
-    <!-- Win Modal -->
-    <div id="win-modal" role="dialog" aria-modal="true" aria-labelledby="winTitle">
-        <div class="win-card">
-            <div class="win-emoji">✨🎉</div>
-            <h2 class="win-title" id="winTitle">Молодец!</h2>
-            <p class="win-message">Ты отличный помощник!</p>
-            <button class="win-btn" onclick="restartGame()">Играть ещё раз</button>
+    <!-- Окно успеха -->
+    <div id="success-modal" class="fixed inset-0 bg-black/40 items-center justify-center z-50 p-6" style="display:none">
+        <div class="bg-white rounded-3xl p-8 w-full text-center shadow-2xl" style="max-width:320px">
+            <div class="text-6xl mb-4">✨</div>
+            <h2 class="text-2xl font-black text-blue-600 mb-2">Молодец!</h2>
+            <p class="text-gray-500 mb-6">Ты отличный помощник!</p>
+            <button onclick="location.reload()" class="bg-blue-600 text-white font-bold py-3 px-8 rounded-full shadow-lg">Играть еще раз</button>
         </div>
     </div>
 
     <script>
-        // === Конфигурация ===
-        const CONFIG = {
-            totalItems: 8,
-            correctThreshold: 8, // все должны быть правильно
-            dragSensitivity: 8, // px для начала drag
-            snapThreshold: 60, // px для авто-притяжения к зоне
-            animDuration: 400 // ms
-        };
+        const AUDIO_FILE_NAME = '1.mp3';
+        let gameAudio = null;
+        let useSound = false;
+        let score = 0;
 
-        // === Данные предметов ===
-        const ITEMS = [
-            { id: 'apple', label: 'Яблоко', icon: '🍎', type: 'edible' },
-            { id: 'bread', label: 'Хлеб', icon: '🍞', type: 'edible' },
-            { id: 'milk', label: 'Молоко', icon: '🥛', type: 'edible' },
-            { id: 'carrot', label: 'Морковь', icon: '🥕', type: 'edible' },
-            { id: 'soap', label: 'Мыло', icon: '🧼', type: 'inedible' },
-            { id: 'brush', label: 'Щётка', icon: '🪥', type: 'inedible' },
-            { id: 'book', label: 'Книга', icon: '📚', type: 'inedible' },
-            { id: 'ball', label: 'Мяч', icon: '⚽', type: 'inedible' }
+        const itemsData = [
+            { name: 'Яблоко', icon: '🍎', type: 'food' },
+            { name: 'Губка',  icon: '🧽', type: 'cleaning' },
+            { name: 'Банан',  icon: '🍌', type: 'food' },
+            { name: 'Молоко', icon: '🥛', type: 'food' },
+            { name: 'Мыло',   icon: '🧼', type: 'cleaning' },
+            { name: 'Спрей',  icon: '🧴', type: 'cleaning' },
+            { name: 'Щетка',  icon: '🧹', type: 'cleaning' },
+            { name: 'Хлеб',   icon: '🍞', type: 'food' }
         ];
 
-        // === Состояние игры ===
-        const state = {
-            sound: true,
-            items: [],
-            sorted: { edible: 0, inedible: 0 },
-            isDragging: false,
-            isComplete: false,
-            dragData: null
-        };
+        function initApp(sound) {
+            useSound = sound;
+            document.getElementById('start-screen').classList.add('hidden');
 
-        // === DOM ===
-        const els = {};
-        const initDOM = () => {
-            els.itemsArea = document.getElementById('items-area');
-            els.zones = {
-                edible: document.getElementById('zone-edible'),
-                inedible: document.getElementById('zone-inedible')
-            };
-            els.counts = {
-                edible: document.getElementById('count-edible'),
-                inedible: document.getElementById('count-inedible')
-            };
-            els.checkBtn = document.getElementById('checkBtn');
-            els.winModal = document.getElementById('win-modal');
-            els.soundToggle = document.getElementById('soundToggle');
-            els.soundIcon = document.getElementById('soundIcon');
-        };
-
-        // === Утилиты ===
-        const isLandscape = () => window.matchMedia('(orientation: landscape)').matches;
-        const shuffle = (arr) => [...arr].sort(() => Math.random() - 0.5);
-        
-        const playSound = (type) => {
-            if (!state.sound) return;
-            // Здесь можно добавить Web Audio API или <audio> элементы
-            // Для демо — визуальная обратная связь
-        };
-
-        // === Создание предмета ===
-        const createItem = (itemData) => {
-            const el = document.createElement('div');
-            el.className = 'draggable-item';
-            el.dataset.id = itemData.id;
-            el.dataset.type = itemData.type;
-            el.setAttribute('role', 'button');
-            el.setAttribute('tabindex', '0');
-            el.setAttribute('aria-label', `${itemData.label} — ${itemData.type === 'edible' ? 'съедобное' : 'несъедобное'}`);
-            el.innerHTML = `
-                <span class="item-icon" aria-hidden="true">${itemData.icon}</span>
-                <span class="item-label">${itemData.label}</span>
-            `;
-            
-            // Позиция в области предметов
-            el.style.position = 'relative';
-            
-            // Обработчики
-            setupDrag(el);
-            el.addEventListener('click', () => !state.isDragging && handleItemClick(el));
-            el.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    handleItemClick(el);
-                }
-            });
-            
-            return el;
-        };
-
-        // === Drag & Drop логика ===
-        const setupDrag = (el) => {
-            let startX, startY, initialLeft, initialTop, isDragging = false;
-            
-            const onStart = (e) => {
-                if (el.classList.contains('sorted') || state.isComplete) return;
-                e.preventDefault();
-                
-                const touch = e.touches?.[0] || e;
-                startX = touch.clientX;
-                startY = touch.clientY;
-                
-                const rect = el.getBoundingClientRect();
-                initialLeft = rect.left;
-                initialTop = rect.top;
-                
-                el.style.transition = 'none';
-                el.style.zIndex = '1000';
-                
-                const onMove = (e2) => {
-                    e2.preventDefault();
-                    const t = e2.touches?.[0] || e2;
-                    const dx = t.clientX - startX;
-                    const dy = t.clientY - startY;
-                    
-                    if (!isDragging && (Math.abs(dx) > CONFIG.dragSensitivity || Math.abs(dy) > CONFIG.dragSensitivity)) {
-                        isDragging = true;
-                        state.isDragging = true;
-                        el.classList.add('dragging');
-                        document.body.style.userSelect = 'none';
-                    }
-                    
-                    if (isDragging) {
-                        el.style.transform = `translate(${dx}px, ${dy}px) scale(1.12)`;
-                    }
-                };
-                
-                const onEnd = (e2) => {
-                    document.removeEventListener('touchmove', onMove, { passive: false });
-                    document.removeEventListener('mousemove', onMove, { passive: false });
-                    document.removeEventListener('touchend', onEnd);
-                    document.removeEventListener('mouseup', onEnd);
-                    
-                    if (isDragging) {
-                        checkDrop(el, e2);
-                    }
-                    
-                    setTimeout(() => {
-                        el.style.transition = `transform ${CONFIG.animDuration}ms cubic-bezier(0.25,0.46,0.45,0.94)`;
-                        el.style.transform = 'translate(0,0) scale(1)';
-                        el.style.zIndex = '';
-                        el.classList.remove('dragging');
-                        state.isDragging = false;
-                        document.body.style.userSelect = '';
-                    }, 10);
-                };
-                
-                document.addEventListener('touchmove', onMove, { passive: false });
-                document.addEventListener('mousemove', onMove, { passive: false });
-                document.addEventListener('touchend', onEnd, { passive: true });
-                document.addEventListener('mouseup', onEnd, { passive: true });
-            };
-            
-            el.addEventListener('touchstart', onStart, { passive: false });
-            el.addEventListener('mousedown', onStart, { passive: false });
-        };
-
-        // === Проверка дропа в зону ===
-        const checkDrop = (el, e) => {
-            const touch = e.changedTouches?.[0] || e;
-            const x = touch.clientX;
-            const y = touch.clientY;
-            
-            for (const [type, zone] of Object.entries(els.zones)) {
-                const rect = zone.getBoundingClientRect();
-                const dist = Math.hypot(
-                    x - (rect.left + rect.width/2),
-                    y - (rect.top + rect.height/2)
-                );
-                
-                if (dist < CONFIG.snapThreshold) {
-                    sortItem(el, type);
-                    return;
-                }
+            if (sound) {
+                gameAudio = new Audio(AUDIO_FILE_NAME);
+                gameAudio.onerror = () => console.error('Аудиофайл 1.mp3 не найден.');
             }
-            // Если не в зону — вернуть на место с анимацией
-            playSound('wrong');
-            el.classList.add('wrong');
-            setTimeout(() => el.classList.remove('wrong'), 400);
-        };
 
-        // === Сортировка предмета ===
-        const sortItem = (el, targetType) => {
-            const actualType = el.dataset.type;
-            const isCorrect = actualType === targetType;
-            
-            el.classList.add('sorted', isCorrect ? 'correct' : 'wrong');
-            el.style.pointerEvents = 'none';
-            
-            if (isCorrect) {
-                state.sorted[targetType]++;
-                els.counts[targetType].textContent = state.sorted[targetType];
-                playSound('correct');
-                
-                // Анимация "полёта" в зону
-                const zone = els.zones[targetType];
-                const zoneRect = zone.getBoundingClientRect();
-                const elRect = el.getBoundingClientRect();
-                
-                const dx = (zoneRect.left + zoneRect.width/2) - (elRect.left + elRect.width/2);
-                const dy = (zoneRect.top + zoneRect.height/2) - (elRect.top + elRect.height/2);
-                
-                el.style.transition = `transform ${CONFIG.animDuration}ms cubic-bezier(0.25,0.46,0.45,0.94)`;
-                el.style.transform = `translate(${dx}px, ${dy}px) scale(0.88)`;
-                
-                setTimeout(() => {
-                    el.style.transform = 'scale(0.88)';
-                    // Переместить в DOM зоны для правильного позиционирования
-                    zone.appendChild(el);
-                    el.style.position = 'absolute';
-                    el.style.left = '50%';
-                    el.style.top = '50%';
-                    el.style.transform = 'translate(-50%, -50%) scale(0.88)';
-                }, CONFIG.animDuration);
-                
-            } else {
-                playSound('wrong');
-                // Визуальная ошибка, но предмет остаётся
-                setTimeout(() => {
-                    el.classList.remove('wrong');
-                    el.classList.add('correct'); // Всё равно считаем "отсортированным" для прогресса
-                    state.sorted[targetType]++;
-                    els.counts[targetType].textContent = state.sorted[targetType];
-                }, 400);
-            }
-            
-            updateCheckButton();
-        };
-
-        // === Клик по предмету (альтернатива драгу) ===
-        const handleItemClick = (el) => {
-            if (el.classList.contains('sorted') || state.isComplete) return;
-            
-            // Авто-сортировка: если предмет съедобный — в корзину, иначе в коробку
-            const targetType = el.dataset.type;
-            sortItem(el, targetType);
-        };
-
-        // === Обновление кнопки проверки ===
-        const updateCheckButton = () => {
-            const totalSorted = state.sorted.edible + state.sorted.inedible;
-            els.checkBtn.disabled = totalSorted < CONFIG.totalItems || state.isComplete;
-        };
-
-        // === Проверка результатов ===
-        const checkResults = () => {
-            if (state.isComplete) return;
-            
-            // Проверяем, все ли предметы отсортированы правильно
-            const items = els.itemsArea.querySelectorAll('.draggable-item.sorted');
-            const zones = Object.values(els.zones);
-            let allCorrect = true;
-            
-            zones.forEach(zone => {
-                zone.querySelectorAll('.draggable-item.sorted').forEach(item => {
-                    if (item.dataset.type !== zone.dataset.type) {
-                        allCorrect = false;
-                        item.classList.add('wrong');
-                        setTimeout(() => item.classList.remove('wrong'), 500);
-                    }
-                });
-            });
-            
-            if (allCorrect && (state.sorted.edible + state.sorted.inedible) >= CONFIG.correctThreshold) {
-                state.isComplete = true;
-                els.winModal.style.display = 'flex';
-                playSound('win');
-                // Фокус на кнопку для доступности
-                setTimeout(() => els.winModal.querySelector('button')?.focus(), 100);
-            } else {
-                // Визуальная обратная связь
-                els.checkBtn.textContent = '⚠️ Попробуй ещё!';
-                els.checkBtn.style.background = '#f97316';
-                setTimeout(() => {
-                    els.checkBtn.textContent = 'Проверить';
-                    els.checkBtn.style.background = '';
-                }, 1200);
-            }
-        };
-
-        // === Переключение звука ===
-        const toggleSound = () => {
-            state.sound = !state.sound;
-            els.soundToggle.setAttribute('aria-pressed', state.sound);
-            els.soundIcon.className = `fa-solid ${state.sound ? 'fa-volume-high' : 'fa-volume-xmark'}`;
-            els.soundToggle.querySelector('span').textContent = state.sound ? 'Со звуком' : 'Без звука';
-        };
-
-        // === Перезапуск игры ===
-        const restartGame = () => {
-            // Сброс состояния
-            state.sorted = { edible: 0, inedible: 0 };
-            state.isComplete = false;
-            state.isDragging = false;
-            
-            // Очистка зон
-            Object.values(els.zones).forEach(zone => {
-                zone.querySelectorAll('.draggable-item').forEach(el => el.remove());
-            });
-            els.itemsArea.innerHTML = '';
-            
-            // Сброс UI
-            els.counts.edible.textContent = '0';
-            els.counts.inedible.textContent = '0';
-            els.checkBtn.disabled = true;
-            els.checkBtn.textContent = 'Проверить';
-            els.winModal.style.display = 'none';
-            
-            // Генерация новых предметов
-            initItems();
-            updateCheckButton();
-        };
-
-        // === Инициализация предметов ===
-        const initItems = () => {
-            const shuffled = shuffle(ITEMS).slice(0, CONFIG.totalItems);
-            shuffled.forEach(itemData => {
-                const el = createItem(itemData);
-                els.itemsArea.appendChild(el);
-            });
-        };
-
-        // === Обработка ресайза ===
-        const handleResize = (() => {
-            let timeout;
-            return () => {
-                clearTimeout(timeout);
-                timeout = setTimeout(() => {
-                    // Пересчёт позиций уже отсортированных предметов при повороте
-                    Object.entries(els.zones).forEach(([type, zone]) => {
-                        zone.querySelectorAll('.draggable-item.sorted').forEach(el => {
-                            el.style.position = 'absolute';
-                            el.style.left = '50%';
-                            el.style.top = '50%';
-                            el.style.transform = 'translate(-50%, -50%) scale(0.88)';
-                        });
-                    });
-                }, 100);
-            };
-        })();
-
-        // === Инициализация ===
-        const init = () => {
-            initDOM();
-            initItems();
-            
-            // Слушатели
-            els.checkBtn.addEventListener('click', checkResults);
-            els.soundToggle.addEventListener('click', toggleSound);
-            
-            // Drag-over визуал для зон
-            Object.values(els.zones).forEach(zone => {
-                zone.addEventListener('dragover', (e) => {
-                    e.preventDefault();
-                    zone.classList.add('drag-over');
-                });
-                zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
-                zone.addEventListener('drop', (e) => {
-                    e.preventDefault();
-                    zone.classList.remove('drag-over');
-                });
-                // Клик по зоне для сортировки выбранного предмета
-                zone.addEventListener('click', (e) => {
-                    if (state.isComplete) return;
-                    const unsorted = document.querySelector('.draggable-item:not(.sorted)');
-                    if (unsorted && !state.isDragging) {
-                        sortItem(unsorted, zone.dataset.type);
-                    }
-                });
-            });
-            
-            // События ориентации
-            window.addEventListener('resize', handleResize, { passive: true });
-            window.addEventListener('orientationchange', () => setTimeout(handleResize, 200), { passive: true });
-            
-            // Защита от зума двойным тапом
-            let lastTouchEnd = 0;
-            document.addEventListener('touchend', (e) => {
-                const now = Date.now();
-                if (now - lastTouchEnd <= 300) e.preventDefault();
-                lastTouchEnd = now;
-            }, { passive: false });
-            
-            // Поддержка клавиатуры для кнопки проверки
-            els.checkBtn.addEventListener('keydown', (e) => {
-                if ((e.key === 'Enter' || e.key === ' ') && !els.checkBtn.disabled) {
-                    e.preventDefault();
-                    checkResults();
-                }
-            });
-        };
-
-        // Запуск
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', init);
-        } else {
-            init();
+            renderItems();
+            applyLayout();
+            if (useSound) playAudio();
         }
+
+        function playAudio() {
+            if (gameAudio) {
+                gameAudio.currentTime = 0;
+                gameAudio.play().catch(() => {});
+            }
+        }
+
+        function renderItems() {
+            const container = document.getElementById('items-container');
+            container.innerHTML = '';
+            itemsData.forEach(item => {
+                const el = document.createElement('div');
+                el.className = 'drag-item';
+                el.draggable = true;
+                el.dataset.name = item.name;
+                el.dataset.type = item.type;
+                el.innerHTML = `<div class="item-icon">${item.icon}</div><div class="item-name">${item.name}</div>`;
+
+                el.ontouchstart = handleTouchStart;
+                el.ontouchmove  = handleTouchMove;
+                el.ontouchend   = handleTouchEnd;
+
+                el.ondragstart = e => { e.dataTransfer.setData('text', item.name); el.classList.add('opacity-40'); };
+                el.ondragend   = () => el.classList.remove('opacity-40');
+                container.appendChild(el);
+            });
+        }
+
+        /* ── Tablet-landscape layout switch ── */
+        function applyLayout() {
+            const leftCol = document.getElementById('left-col');
+            const isTabletLandscape = window.innerWidth > 480 && window.innerWidth <= 1024 && window.innerWidth > window.innerHeight;
+
+            if (isTabletLandscape) {
+                leftCol.style.display = 'flex';
+                leftCol.style.flexDirection = 'column';
+                leftCol.style.flex = '1 1 55%';
+                leftCol.style.height = '100%';
+                leftCol.style.minWidth = '0';
+            } else {
+                leftCol.style.display = 'contents';
+            }
+        }
+
+        window.addEventListener('resize', applyLayout);
+        window.addEventListener('orientationchange', () => setTimeout(applyLayout, 100));
+
+        /* ── Touch drag ── */
+        let curDrag = null;
+        let origParent = null;
+        let origNext = null;
+
+        function handleTouchStart(e) {
+            curDrag = e.currentTarget;
+            origParent = curDrag.parentNode;
+            origNext   = curDrag.nextSibling;
+
+            const rect = curDrag.getBoundingClientRect();
+            curDrag.style.position = 'fixed';
+            curDrag.style.zIndex   = '1000';
+            curDrag.style.width    = rect.width + 'px';
+            curDrag.style.height   = rect.height + 'px';
+            curDrag.style.opacity  = '0.85';
+            moveAt(e.touches[0].clientX, e.touches[0].clientY, rect.width, rect.height);
+        }
+
+        function handleTouchMove(e) {
+            if (!curDrag) return;
+            e.preventDefault();
+            const rect = { width: parseFloat(curDrag.style.width), height: parseFloat(curDrag.style.height) };
+            moveAt(e.touches[0].clientX, e.touches[0].clientY, rect.width, rect.height);
+
+            document.querySelectorAll('.drop-zone').forEach(z => z.classList.remove('active'));
+            const zone = document.elementFromPoint(e.touches[0].clientX, e.touches[0].clientY)?.closest('.drop-zone');
+            if (zone) zone.classList.add('active');
+        }
+
+        function handleTouchEnd(e) {
+            if (!curDrag) return;
+            document.querySelectorAll('.drop-zone').forEach(z => z.classList.remove('active'));
+
+            const t = e.changedTouches[0];
+            const zone = document.elementFromPoint(t.clientX, t.clientY)?.closest('.drop-zone');
+
+            if (zone && zone.dataset.type === curDrag.dataset.type) {
+                dropIn(curDrag, zone);
+            } else {
+                /* вернуть на место */
+                curDrag.style.position = 'static';
+                curDrag.style.width    = 'auto';
+                curDrag.style.height   = 'auto';
+                curDrag.style.opacity  = '1';
+                if (origNext) origParent.insertBefore(curDrag, origNext);
+                else origParent.appendChild(curDrag);
+            }
+            curDrag = null;
+        }
+
+        function moveAt(x, y, w, h) {
+            curDrag.style.left = (x - w / 2) + 'px';
+            curDrag.style.top  = (y - h / 2) + 'px';
+        }
+
+        function dropIn(el, zone) {
+            const content = document.getElementById(zone.id + '-content');
+            const icon = document.createElement('div');
+            icon.style.cssText = 'font-size:clamp(20px,4vw,32px);animation:bounce 0.6s';
+            icon.textContent = el.querySelector('.item-icon').textContent;
+            content.appendChild(icon);
+            el.remove();
+            score++;
+            if (score === itemsData.length) {
+                const modal = document.getElementById('success-modal');
+                modal.style.display = 'flex';
+            }
+        }
+
+        document.querySelectorAll('.drop-zone').forEach(z => {
+            z.ondragover  = e => { e.preventDefault(); z.classList.add('active'); };
+            z.ondragleave = () => z.classList.remove('active');
+            z.ondrop = e => {
+                z.classList.remove('active');
+                const name = e.dataTransfer.getData('text');
+                const el   = document.querySelector(`[data-name="${name}"]`);
+                if (el && el.dataset.type === z.dataset.type) dropIn(el, z);
+            };
+        });
     </script>
 </body>
 </html>
